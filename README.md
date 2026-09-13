@@ -1,0 +1,34 @@
+# わたしのWiki（ハッカソンMVP 2026-09-13）
+
+AIインタビュアーに声か文字で答えると「あなたは○○タイプ」の診断が出て、当たり／ちがうで確かめたものだけが自分のWikiに入る。ざっくりした聞きたいことは、AIが本人向けの質問文に整えて答える。
+
+## 起動
+```
+cd ~/Downloads/プロジェクト/watashi-wiki
+node server.js
+```
+→ http://localhost:3456 をChromeで開く。スマホは同じWi-Fiで http://<MacのIP>:3456
+
+## AIをつなぐ（どちらか）
+- A. APIキー: `~/.config/secrets.env` に `ANTHROPIC_API_KEY=sk-ant-...` を1行追加。再起動不要（次の呼び出しから有効）。画面下の表示が「AI: Claude」に変わる。
+- B. claude CLI: ターミナルで `claude` を起動して `/login` 後、`LLM_BACKEND=cli node server.js` で起動。
+- どちらも無い場合は「定型文モード」で同じ画面が動く（Wikiは定型文、答えは表示されない）。
+
+## 構成
+- public/index.html … 画面（インタビュー→診断→Wiki→質問の一本道、音声入力、ブラウザ保存）
+- public/index-chips.html … ボタンだけで答える旧版（バックアップ）
+- api/interview.js … インタビュアー（AIなら相手の答えに合わせて次の質問、無ければ固定5問）
+- api/generate.js … インタビューの答え → 診断（タイプ・一行・推測3つ）＋Wiki（AI。失敗時は定型文）
+- api/followup.js … AIの追加1問（AI無しならスキップ）
+- api/rewrite.js … Wiki＋聞きたいこと → 整えた質問と答え
+- api/_llm.js … Claude API / CLI の切り替え
+- server.js … ローカル配信。api/ はVercelの関数と同じ形なのでそのまま公開もできる
+
+## 注意
+- 音声入力はChrome/Safariの音声認識を使う。スマホからhttpで開くとマイクが使えないことがある（httpsが必要）。その場合は文字入力。
+- データは端末のブラウザにだけ保存（localStorage）。サーバーには残さない。
+
+## 自分のWikiのURL（/wiki/UID）
+- 最後の質問に答えると、サーバーの data/wikis.json に保存され、URLが /wiki/xxxxxx に変わる（例: http://192.168.220.112:3456/wiki/y8ybyr）。同じWi-Fi内なら他の端末からも開ける
+- 「URLをコピー」でリンクをコピー。もう一度答えると同じUIDに新しい版が積まれ、「履歴を表示」で比較できる
+- 注意: この機能を入れたので、答えた内容は端末だけでなくサーバー（このMac）にも残る。公開する場合はDBに置き換える

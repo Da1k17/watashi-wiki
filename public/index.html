@@ -1,0 +1,719 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>わたしのWiki</title>
+<style>
+:root{--bg:#F4F7F2;--card:#fff;--ink:#1D2A24;--muted:#5C685F;--line:#D2DAD1;--accent:#1F6F5B;--accent-ink:#fff;--accent-soft:rgba(31,111,91,.11);--amber:#B86F0E;--amber-soft:rgba(184,111,14,.13);--blue:#2B57D6;--blue-soft:rgba(43,87,214,.09);--danger:#B23A3A}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP",system-ui,sans-serif;font-size:17px;line-height:1.7}
+.app{max-width:560px;margin:0 auto;padding:20px 18px 90px;min-height:100vh}
+header{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+header .brand{font-weight:800;font-size:16px;letter-spacing:.02em}
+header .step{font-size:13px;color:var(--muted)}
+h1{font-size:30px;line-height:1.3;margin:20px 0 10px;font-weight:800}
+h2{font-size:22px;line-height:1.4;margin:6px 0 14px;font-weight:800}
+p{margin:0 0 12px}
+.muted{color:var(--muted)}
+.small{font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:52px;padding:10px 20px;border-radius:12px;border:1.5px solid var(--line);background:var(--card);color:var(--ink);font-size:18px;font-weight:700;cursor:pointer;width:100%;font-family:inherit}
+.btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.btn.ghost{background:transparent}
+.btn:disabled{opacity:.45;cursor:default}
+.btn:focus-visible,.chip:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.row{display:flex;gap:10px;margin-top:12px}
+.row .btn{flex:1}
+.chips{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0 6px}
+.chip{min-height:46px;padding:8px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);font-size:17px;font-weight:600;cursor:pointer;font-family:inherit;color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.grp{font-size:14px;color:var(--muted);margin-top:10px;font-weight:700;letter-spacing:.06em}
+input[type=text],textarea{width:100%;font-size:18px;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font-family:inherit}
+textarea{min-height:96px;resize:vertical}
+.voice{display:flex;gap:10px;align-items:flex-start;margin-top:10px}
+.voice textarea{flex:1}
+.mic{width:60px;min-height:60px;border-radius:14px;border:none;background:var(--amber);color:#fff;font-weight:800;font-size:15px;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex:0 0 auto}
+.mic[aria-pressed="true"]{background:var(--danger);animation:pulse 1s infinite}
+.mic:disabled{background:var(--line);color:var(--muted);animation:none}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(178,58,58,.5)}100%{box-shadow:0 0 0 14px rgba(178,58,58,0)}}
+@media (prefers-reduced-motion: reduce){.mic[aria-pressed="true"]{animation:none}}
+.progress{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin:6px 0 18px}
+.progress i{display:block;height:100%;background:var(--accent);width:0;transition:width .3s}
+.q{font-size:23px;font-weight:800;line-height:1.45;margin:4px 0 10px}
+.hint{font-size:14px;color:var(--muted);margin:0 0 8px}
+.msg{padding:10px 14px;border-radius:10px;background:var(--amber-soft);color:var(--amber);font-size:15px;margin:10px 0;display:none}
+.msg.show{display:block}
+.wiki h3{font-size:15px;color:var(--muted);letter-spacing:.06em;margin:18px 0 4px;font-weight:700}
+.wiki h3:first-child{margin-top:0}
+.wiki p,.wiki li{margin:0 0 6px;font-size:18px}
+.wiki ul{margin:0;padding-left:1.2em}
+.src{display:inline-block;font-size:12px;color:var(--blue);background:var(--blue-soft);border-radius:4px;padding:0 6px;margin-left:6px;vertical-align:middle;font-weight:700}
+.lab{font-size:13px;letter-spacing:.08em;font-weight:700;color:var(--muted);margin-bottom:6px}
+.block{border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;background:var(--card);margin-bottom:12px;font-size:18px}
+.block.after{border-color:var(--blue);background:var(--blue-soft)}
+.block.after .lab{color:var(--blue)}
+.block.ans{border-style:dashed}
+.spinner{width:34px;height:34px;border:4px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;margin:20px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.eyebrow{font-size:13px;letter-spacing:.14em;color:var(--muted);font-weight:700}
+.type{font-size:36px;line-height:1.25;font-weight:900;color:var(--accent);margin:6px 0 8px;text-wrap:balance}
+.line{font-size:19px;margin:0 0 16px}
+.guess{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:12px 0;border-top:1px solid var(--line)}
+.guess:last-child{border-bottom:1px solid var(--line)}
+.guess .g{font-size:18px;font-weight:600}
+.yn{display:flex;gap:6px}
+.yn button{min-height:44px;padding:6px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;color:var(--ink)}
+.yn button[aria-pressed="true"].y{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+.yn button[aria-pressed="true"].n{background:var(--muted);color:#fff;border-color:transparent}
+.typebadge{display:inline-block;background:var(--accent-soft);color:var(--accent);font-weight:800;border-radius:8px;padding:2px 10px;margin-bottom:8px}
+.chat{display:flex;flex-direction:column;gap:10px;margin:6px 0 12px}
+.b{max-width:90%;padding:11px 15px;border-radius:18px;font-size:18px;line-height:1.55;white-space:pre-wrap}
+.b.ai{background:var(--card);border:1px solid var(--line);align-self:flex-start;border-bottom-left-radius:5px}
+.b.me{background:var(--accent);color:var(--accent-ink);align-self:flex-end;border-bottom-right-radius:5px}
+.b.ai .who{display:block;font-size:12px;color:var(--muted);letter-spacing:.08em;margin-bottom:2px}
+.thinking{color:var(--muted);font-size:15px;padding:4px 2px}
+#s-start.hero{background:linear-gradient(160deg,#FF7A59 0%,#7B61FF 100%);color:#fff;border-radius:24px;padding:26px 20px 22px;margin-top:4px}
+#s-start.hero h1{color:#fff;margin-top:6px}
+#s-start.hero .muted,#s-start.hero .small{color:rgba(255,255,255,.88)}
+#s-start.hero .card{background:rgba(255,255,255,.14);border-color:rgba(255,255,255,.45)}
+#s-start.hero .lab{color:#fff}
+#s-start.hero input[type=text]{background:rgba(255,255,255,.95);border-color:transparent;color:#1D2A24}
+#s-start.hero .btn.primary{background:#fff;color:#1D2A24;font-size:20px}
+#s-int.story{min-height:calc(100vh - 60px);border-radius:24px;padding:20px 18px 22px;color:#fff;background:linear-gradient(160deg,#FF7A59,#FFB347);display:flex;flex-direction:column;gap:14px;transition:background .4s}
+#s-int[data-topic="q2"]{background:linear-gradient(160deg,#7B61FF,#FF6FB5)}
+#s-int[data-topic="q3"]{background:linear-gradient(160deg,#1FB2A6,#2F6BFF)}
+#s-int[data-topic="q4"]{background:linear-gradient(160deg,#F4B400,#FF6A3D)}
+#s-int[data-topic="q5"]{background:linear-gradient(160deg,#2BB673,#0F7A5E)}
+#s-int[data-topic="followup"]{background:linear-gradient(160deg,#5C6BC0,#26C6DA)}
+.dots{display:flex;gap:6px}
+.dots i{flex:1;height:5px;border-radius:3px;background:rgba(255,255,255,.35)}
+.dots i.on{background:#fff}
+.ack{font-size:15px;opacity:.92;min-height:1.4em}
+.qbig{font-size:31px;font-weight:900;line-height:1.28;text-wrap:balance;letter-spacing:-.01em}
+.fill{font-size:20px;background:rgba(255,255,255,.16);border-radius:14px;padding:12px 14px;line-height:1.7}
+.fill b{background:#fff;color:#1D2A24;border-radius:8px;padding:1px 9px;font-weight:800;box-decoration-break:clone}
+.fill b.empty{color:rgba(29,42,36,.35);font-weight:600}
+#s-int .hint{color:rgba(255,255,255,.88);margin:0}
+#s-int .chip{background:rgba(255,255,255,.18);border-color:rgba(255,255,255,.75);color:#fff;font-size:18px;min-height:50px}
+#s-int .chip[aria-pressed="true"]{background:#fff;color:#1D2A24;border-color:#fff}
+#s-int textarea{background:rgba(255,255,255,.96);color:#1D2A24;border-color:transparent;min-height:84px}
+#s-int .mic{background:#1D2A24}
+#s-int .mic[aria-pressed="true"]{background:var(--danger)}
+#s-int .btn.primary{background:#fff;color:#1D2A24;font-size:20px;border:none}
+#s-int .btn:disabled{opacity:.6}
+#s-int .toggle{color:rgba(255,255,255,.88)}
+#s-int .msg{background:rgba(255,255,255,.92);color:#B23A3A}
+#s-int .thinking{color:rgba(255,255,255,.9)}
+.resultcard{background:linear-gradient(160deg,#7B61FF,#FF6FB5);color:#fff;border-radius:22px;padding:22px 20px 18px;margin-bottom:14px}
+.resultcard .eyebrow{color:rgba(255,255,255,.88)}
+.resultcard .type{color:#fff;font-size:34px}
+.resultcard .line{margin-bottom:4px}
+.wp{color:#202122;background:#fff;border:1px solid #eaecf0;border-radius:6px;padding:14px 16px 18px}
+.wp-top{display:flex;gap:10px;align-items:center}
+.wp-logo{width:40px;height:40px;border-radius:50%;background:#fff;border:1px solid #a2a9b1;display:grid;place-items:center;font-family:Georgia,"Times New Roman",serif;font-size:22px;font-weight:700;color:#202122}
+.wp-brand{font-family:"Hiragino Mincho ProN","Yu Mincho",Georgia,serif;font-size:19px;line-height:1.1;color:#202122}
+.wp-sub{font-size:11px;color:#54595d;letter-spacing:.1em}
+.wp-title{font-family:"Hiragino Mincho ProN","Yu Mincho",Georgia,serif;font-weight:400;font-size:30px;margin:12px 0 0;border-bottom:1px solid #a2a9b1;padding-bottom:4px;line-height:1.3;color:#202122}
+.wp-tabs{display:flex;gap:16px;font-size:14px;padding:8px 0 0;border-bottom:1px solid #a2a9b1;color:#3366cc;flex-wrap:wrap}
+.wp-tabs span{cursor:pointer;padding-bottom:6px}
+.wp-tabs .on{color:#202122;border-bottom:2px solid #36c;margin-bottom:-1px}
+.wp-tabs .sp{flex:1;cursor:default}
+.wp-from{font-size:12.5px;color:#54595d;margin:8px 0 12px}
+.wp-body{display:grid;grid-template-columns:1fr 210px;gap:16px;align-items:start}
+@media (max-width:600px){.wp-body{grid-template-columns:1fr}.infobox{order:-1}}
+.wp-toc{border:1px solid #a2a9b1;background:#f8f9fa;padding:8px 14px 8px 10px;font-size:13.5px;display:inline-block;margin:0 0 14px;color:#202122}
+.wp-toc ol{margin:4px 0 0;padding-left:1.7em;color:#3366cc}
+.wp .wiki{border:none;background:transparent;padding:0;border-radius:0}
+.wp .wiki h3{font-family:"Hiragino Mincho ProN","Yu Mincho",Georgia,serif;font-weight:400;font-size:22px;color:#202122;border-bottom:1px solid #a2a9b1;margin:16px 0 8px;padding-bottom:2px;letter-spacing:0}
+.wp .wiki h3:first-child{margin-top:0}
+.wp .wiki h3 .ed{font-family:"Hiragino Sans",sans-serif;font-size:12px;color:#3366cc;margin-left:8px}
+.wp .wiki p,.wp .wiki li{font-size:15.5px;line-height:1.7;margin:0 0 8px;color:#202122}
+.wp .wiki sup.ref{color:#3366cc;font-size:11px;margin-left:2px;font-weight:600}
+.infobox{border:1px solid #a2a9b1;background:#f8f9fa;font-size:13px;border-collapse:collapse;width:100%;color:#202122}
+.infobox caption{background:#cedff2;font-weight:700;padding:6px;font-size:15px;color:#202122}
+.infobox th{text-align:left;padding:5px 6px;vertical-align:top;white-space:nowrap;width:1%;color:#202122}
+.infobox td{padding:5px 6px;vertical-align:top;line-height:1.5}
+.infobox td.lk{color:#3366cc;font-weight:700}
+.wp .btnbar{margin-top:16px}
+.wp .btn{font-size:16px;min-height:46px}
+.revs{list-style:none;padding:0;margin:8px 0 18px;font-size:14px;color:#202122}
+.revs li{padding:8px 10px;border-bottom:1px solid #eaecf0;display:flex;gap:10px;flex-wrap:wrap;align-items:baseline}
+.revs .d{color:#3366cc;font-weight:600}
+.revs .cur{color:#54595d;font-size:12px}
+.revs .sample{color:#b32424;font-size:12px}
+.wp h2.dh{font-family:"Hiragino Mincho ProN","Yu Mincho",Georgia,serif;font-weight:400;font-size:22px;border-bottom:1px solid #a2a9b1;margin:8px 0 10px;padding-bottom:2px;color:#202122}
+.diff{width:100%;border-collapse:collapse;font-size:14px;color:#202122}
+.diff th{font-weight:700;text-align:center;padding:6px;background:#f8f9fa;border:1px solid #eaecf0}
+.diff td{padding:8px 10px;border:1px solid #eaecf0;vertical-align:top;line-height:1.6;width:44%}
+.diff td.sec{background:#f8f9fa;font-weight:700;width:12%;white-space:nowrap}
+.diff td.del{background:#ffe49c}
+.diff td.add{background:#a3d3ff}
+.diff-ai{background:#fff;border-left:4px solid #36c;padding:10px 12px;margin:14px 0;font-size:14.5px;color:#202122;line-height:1.7}
+.wp .small,.wp .muted{color:#54595d}
+.wp .wiki h3 .ed{cursor:pointer}
+.wp .secedit textarea{min-height:110px;font-size:15.5px;line-height:1.6;margin-top:4px;background:#fff;color:#202122;border:1.5px solid #a2a9b1}
+.wp .secedit .row{margin-top:8px}
+.wp .secedit .row .btn{min-height:42px;font-size:15px}
+#s-swipe{min-height:calc(100vh - 60px);border-radius:24px;padding:20px 18px 22px;color:#fff;background:linear-gradient(160deg,#1B2A4A,#0F1B33);display:flex;flex-direction:column;gap:14px;overflow:hidden}
+#s-swipe .top{display:flex;justify-content:space-between;font-size:14px;opacity:.9}
+.tbar{height:8px;border-radius:4px;background:rgba(255,255,255,.2);overflow:hidden}
+.tbar i{display:block;height:100%;background:#FFB347;width:100%}
+.cardwrap{flex:1;display:grid;place-items:center;min-height:300px;position:relative}
+.card2{width:100%;max-width:420px;min-height:220px;background:#fff;color:#1D2A24;border-radius:22px;padding:26px 22px;display:grid;place-items:center;text-align:center;font-size:26px;font-weight:800;line-height:1.4;box-shadow:0 18px 40px rgba(0,0,0,.35);touch-action:none;user-select:none;cursor:grab;transition:transform .18s ease-out,opacity .18s}
+.card2.drag{transition:none}
+.card2 .tag{position:absolute;top:14px;font-size:18px;font-weight:900;padding:4px 12px;border-radius:8px;opacity:0;transition:opacity .1s}
+.card2 .tag.yes{right:14px;color:#1F6F5B;border:2px solid #1F6F5B;transform:rotate(12deg)}
+.card2 .tag.no{left:14px;color:#B23A3A;border:2px solid #B23A3A;transform:rotate(-12deg)}
+.swbtns{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.swbtns .btn{min-height:60px;font-size:19px;border:none}
+.swbtns .no{background:#B23A3A;color:#fff}
+.swbtns .yes{background:#1F6F5B;color:#fff}
+#s-swipe .hint{color:rgba(255,255,255,.85);margin:0;text-align:center}
+footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;color:var(--muted);background:var(--bg);border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+.badge{font-weight:700}
+.badge.api{color:var(--accent)}
+.badge.none{color:var(--amber)}
+.toggle{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.toggle input{width:18px;height:18px}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">わたしのWiki</div>
+    <div class="step" id="step"></div>
+  </header>
+
+  <!-- ① はじめる -->
+  <section id="s-start" class="hero">
+    <h1>5つの質問で、<br>あなたのWikiページができます。</h1>
+    <p class="muted">インタビュアーの質問に、声か文字か、タップで答えるだけ。約1分。</p>
+    <div class="card">
+      <label class="lab" for="name">ニックネーム（なくてもOK）</label>
+      <input type="text" id="name" placeholder="例: ダイキ" autocomplete="nickname">
+    </div>
+    <div class="row"><button class="btn primary" id="b-start">はじめる</button></div>
+    <p class="small muted" style="margin-top:14px">答えた内容はこの端末のブラウザにだけ残ります。年齢は年代で聞き、本名や住所は聞きません。</p>
+  </section>
+
+  <!-- ② インタビュー（1問1画面・穴埋め） -->
+  <section id="s-int" class="story" hidden data-topic="q1">
+    <div class="dots" id="dots"></div>
+    <div class="ack" id="ack"></div>
+    <div class="qbig" id="qbig"></div>
+    <div class="fill" id="fill"></div>
+    <div class="thinking" id="thinking" hidden>つぎの質問を考えています…</div>
+    <p class="hint" id="sughint" hidden>タップで入れる</p>
+    <div class="chips" id="sug"></div>
+    <div class="voice">
+      <textarea id="ans" placeholder="声で話すか、文字で。短くて大丈夫"></textarea>
+      <button class="mic" id="mic-ans" aria-pressed="false"><span>🎤</span><span>声で</span></button>
+    </div>
+    <div class="msg" id="qmsg"></div>
+    <div class="row"><button class="btn primary" id="b-answer">つぎへ →</button></div>
+    <label class="toggle"><input type="checkbox" id="tts"> 質問を読み上げる</label>
+  </section>
+
+  <!-- ②b 直感チェック（3秒スワイプ） -->
+  <section id="s-swipe" hidden>
+    <div class="top"><span>直感チェック</span><span id="cardn"></span></div>
+    <div class="tbar"><i id="tbar"></i></div>
+    <p class="hint">考えないで。3秒で右か左へ。時間切れはパス</p>
+    <div class="cardwrap"><div class="card2" id="card"><span class="tag yes">そう思う</span><span class="tag no">ちがう</span><span id="cardtext"></span></div></div>
+    <div class="swbtns"><button class="btn no" id="b-no">← ちがう</button><button class="btn yes" id="b-yes">そう思う →</button></div>
+  </section>
+
+  <!-- 読み込み中 -->
+  <section id="s-load" hidden>
+    <div class="spinner"></div>
+    <p style="text-align:center" id="loadtext">Wikiを作っています…</p>
+  </section>
+
+  <!-- 診断結果 -->
+  <section id="s-diag" hidden>
+    <div class="resultcard">
+      <div class="eyebrow">診断結果</div>
+      <div class="type" id="d-type"></div>
+      <p class="line" id="d-line"></p>
+    </div>
+    <div class="card">
+      <div class="lab">当たってる？ 3つだけ教えてください</div>
+      <div id="d-guesses"></div>
+      <p class="small muted" style="margin:10px 0 0">「当たり」にしたものだけ、あなたのWikiに入ります。</p>
+    </div>
+    <div class="msg" id="dmsg"></div>
+    <div class="row"><button class="btn primary" id="b-diag-next">詳しい結果（わたしのWiki）を見る</button></div>
+    <div class="row"><button class="btn" id="b-diag-copy">結果をコピー</button></div>
+  </section>
+
+  <!-- ③ わたしのWiki（Wikipedia風） -->
+  <section id="s-wiki" class="wp" hidden>
+    <div class="wp-top"><div class="wp-logo">W</div><div><div class="wp-brand">わたしのWiki</div><div class="wp-sub">自分専用百科事典</div></div></div>
+    <h1 class="wp-title" id="wikititle">わたし</h1>
+    <div class="wp-tabs"><span class="on">ページ</span><span>ノート</span><span class="sp"></span><span class="on">閲覧</span><span id="t-edit">編集</span><span id="t-hist">履歴を表示</span></div>
+    <div class="wp-from">出典: わたしのWiki『自分専用百科事典』 <span id="savedat"></span><br><span id="wikiurl"></span> <a href="#" id="b-url" style="color:#3366cc">URLをコピー</a></div>
+    <div class="wp-body">
+      <div>
+        <div class="wp-toc"><b>目次</b><ol id="toc"></ol></div>
+        <div id="wiki" class="wiki"></div>
+      </div>
+      <table class="infobox" id="infobox"></table>
+    </div>
+    <div class="msg" id="wmsg"></div>
+    <div class="btnbar">
+      <div class="row"><button class="btn primary" id="b-ask">このWikiで質問する</button></div>
+      <div class="row"><button class="btn" id="b-copy">AI用にコピー</button><button class="btn" id="b-hist2">履歴を表示</button></div>
+      <p class="small muted">コピーしたものをChatGPTやClaudeに貼ると、あなたに合わせた返事になります。</p>
+      <div class="row"><button class="btn ghost" id="b-reset">最初から</button></div>
+    </div>
+  </section>
+
+  <!-- ③a 編集 -->
+  <section id="s-edit" class="wp" hidden>
+    <div class="wp-top"><div class="wp-logo">W</div><div><div class="wp-brand">わたしのWiki</div><div class="wp-sub">自分専用百科事典</div></div></div>
+    <h1 class="wp-title" id="edittitle">わたし を編集中</h1>
+    <div class="wp-tabs"><span class="on">ページ</span><span>ノート</span><span class="sp"></span><span id="t-view2">閲覧</span><span class="on">編集</span><span id="t-hist3">履歴を表示</span></div>
+    <p class="small muted" style="margin:10px 0 6px">見出しは「## 」で始めます。根拠は［Q1］のように付けると脚注になります。保存すると新しい版として履歴に残ります。</p>
+    <textarea id="edittext" style="min-height:340px;font-family:ui-monospace,Menlo,monospace;font-size:15px;line-height:1.6"></textarea>
+    <div class="msg" id="emsg"></div>
+    <div class="btnbar"><div class="row"><button class="btn ghost" id="b-edit-cancel">やめる</button><button class="btn primary" id="b-edit-save">保存する</button></div></div>
+  </section>
+
+  <!-- ③b 履歴（思考の遍歴） -->
+  <section id="s-hist" class="wp" hidden>
+    <div class="wp-top"><div class="wp-logo">W</div><div><div class="wp-brand">わたしのWiki</div><div class="wp-sub">自分専用百科事典</div></div></div>
+    <h1 class="wp-title" id="histtitle">わたし: 履歴</h1>
+    <div class="wp-tabs"><span class="on">ページ</span><span>ノート</span><span class="sp"></span><span id="t-view">閲覧</span><span id="t-edit2">編集</span><span class="on">履歴を表示</span></div>
+    <p class="small muted" style="margin:10px 0 6px">同じ質問に答えるたびに版が増えます。2つの版を比べると、考えの変化が見えます。</p>
+    <ul class="revs" id="revs"></ul>
+    <h2 class="dh" id="difftitle">版の比較</h2>
+    <div class="diff-ai" id="diffai"></div>
+    <div style="overflow-x:auto"><table class="diff" id="diff"></table></div>
+    <div class="btnbar"><div class="row"><button class="btn primary" id="b-hist-back">ページに戻る</button></div></div>
+  </section>
+
+  <!-- ④ 聞きたいこと -->
+  <section id="s-ask" hidden>
+    <h2>聞きたいことは？</h2>
+    <p class="hint">近いものを押すか、思ったままを声か文字で。うまく言えなくて大丈夫です。</p>
+    <div class="chips" id="cats"></div>
+    <div class="voice">
+      <textarea id="rough" placeholder="例: 転職しようか迷ってる"></textarea>
+      <button class="mic" id="mic-rough" aria-pressed="false"><span>🎤</span><span>声で</span></button>
+    </div>
+    <div class="msg" id="amsg"></div>
+    <div class="row">
+      <button class="btn ghost" id="b-ask-back">Wikiへ</button>
+      <button class="btn primary" id="b-fix">整える</button>
+    </div>
+  </section>
+
+  <!-- ⑤ 前後と答え -->
+  <section id="s-res" hidden>
+    <h2>あなたに合わせて整えました</h2>
+    <div class="block"><div class="lab">あなたの言葉</div><div id="r-before"></div></div>
+    <div class="block after"><div class="lab">整えた質問</div><div id="r-after"></div></div>
+    <div class="block ans"><div class="lab">答え</div><div id="r-ans"></div></div>
+    <div class="row">
+      <button class="btn" id="b-again">もう一つ聞く</button>
+      <button class="btn primary" id="b-towiki">Wikiを見る</button>
+    </div>
+  </section>
+</div>
+<footer><span id="mode">AI: 確認中…</span><span>ハッカソンMVP 2026-09-13</span></footer>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const screens = ["s-start","s-int","s-swipe","s-load","s-diag","s-wiki","s-edit","s-hist","s-ask","s-res"];
+  const show = (id) => { screens.forEach(s => $(s).hidden = (s !== id)); window.scrollTo(0,0); };
+  const KEY = "watashi-wiki-v1";
+
+  const CATS = ["お金","健康","家族","仕事","趣味","スマホ・機械"];
+  const EXPECTED = 6;
+
+  let state = load() || { name:"", transcript:[], wiki:"", savedAt:"", history:[], diag:null, verdicts:{}, uid:"" };
+  let backend = "none";
+  let pending = null; // いまAIが聞いている質問 {question, topic}
+
+  function load(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch(_) { return null; } }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(_) {} }
+
+  fetch("/api/status").then(r=>r.json()).then(s=>{
+    backend = s.backend;
+    const el = $("mode");
+    if (s.backend === "api") { el.textContent = "AI: Claude"; el.className = "badge api"; }
+    else if (s.backend === "cli") { el.textContent = "AI: Claude（CLI経由）"; el.className = "badge api"; }
+    else { el.textContent = "定型文モード（AI未接続）"; el.className = "badge none"; }
+  }).catch(()=>{ $("mode").textContent = "サーバーに接続できません"; });
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  function attachMic(btn, textarea){
+    if (!SR) { btn.disabled = true; btn.title = "この端末では音声入力が使えません。文字で入力してください"; btn.innerHTML = "<span>🎤</span><span>不可</span>"; return; }
+    let rec = null;
+    btn.onclick = () => {
+      if (rec) { rec.stop(); return; }
+      rec = new SR(); rec.lang = "ja-JP"; rec.interimResults = true; rec.continuous = false;
+      const base = textarea.value ? textarea.value.replace(/\s*$/, "") + " " : "";
+      rec.onresult = (e) => { let t = ""; for (const r of e.results) t += r[0].transcript; textarea.value = base + t; };
+      rec.onerror = (e) => { flash(textarea.closest("section").querySelector(".msg"), "音声が使えませんでした（" + e.error + "）。文字で入力してください"); };
+      rec.onend = () => { rec = null; btn.setAttribute("aria-pressed","false"); btn.innerHTML = "<span>🎤</span><span>声で</span>"; };
+      btn.setAttribute("aria-pressed","true"); btn.innerHTML = "<span>■</span><span>止める</span>";
+      try { rec.start(); } catch(_) { rec = null; }
+    };
+  }
+  function speak(text){
+    if (!$("tts").checked || !window.speechSynthesis) return;
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text); u.lang = "ja-JP"; u.rate = 1;
+    speechSynthesis.speak(u);
+  }
+  function flash(el, text){ if(!el) return; el.textContent = text; el.classList.add("show"); setTimeout(()=>el.classList.remove("show"), 6000); }
+  function chip(label, on, onclick){
+    const b = document.createElement("button"); b.className = "chip"; b.type = "button"; b.textContent = label; b.setAttribute("aria-pressed", on ? "true" : "false"); b.onclick = onclick; return b;
+  }
+
+  const FILL = {
+    q1: "わたしの毎日は［　］が中心。",
+    q2: "好きなのは［　］。",
+    q3: "いま気になっているのは［　］。",
+    q4: "わたしは［　］。",
+    q5: "これから［　］。",
+    followup: "［　］",
+  };
+  function setProgress(){
+    const n = state.transcript.length;
+    $("step").textContent = `${Math.min(n + 1, EXPECTED)}問目`;
+    const d = $("dots"); d.innerHTML = "";
+    for (let i = 0; i < EXPECTED; i++) { const dot = document.createElement("i"); if (i <= n) dot.className = "on"; d.appendChild(dot); }
+  }
+  function updateFill(){
+    const topic = (pending && pending.topic) || "followup";
+    const tpl = FILL[topic] || FILL.followup;
+    const v = $("ans").value.trim();
+    const el = $("fill"); el.innerHTML = "";
+    const [pre, post] = tpl.split("［　］");
+    el.appendChild(document.createTextNode(pre));
+    const b = document.createElement("b"); if (v) { b.textContent = v; } else { b.textContent = "　　　　"; b.className = "empty"; }
+    el.appendChild(b); el.appendChild(document.createTextNode(post || ""));
+    [...document.querySelectorAll("#sug .chip")].forEach(c => c.setAttribute("aria-pressed", v.includes(c.textContent) ? "true" : "false"));
+  }
+  $("ans").addEventListener("input", updateFill);
+  function renderSug(list){
+    const w = $("sug"); w.innerHTML = "";
+    $("sughint").hidden = !(list && list.length);
+    (list || []).forEach(l => w.appendChild(chip(l, false, () => {
+      const ta = $("ans"); const cur = ta.value.trim();
+      if (cur.includes(l)) { ta.value = cur.split("、").filter(x => x !== l).join("、"); }
+      else { ta.value = cur ? (cur.endsWith("、") || cur.endsWith("。") ? cur + l : cur + "、" + l) : l; }
+      updateFill();
+    })));
+  }
+  async function askNext(){
+    $("thinking").hidden = false; $("b-answer").disabled = true; renderSug([]);
+    try {
+      const r = await fetch("/api/interview", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ name: state.name, transcript: state.transcript }) }).then(r=>r.json());
+      $("thinking").hidden = true;
+      if (r.done) { pending = null; $("ack").textContent = r.ack || ""; return startSwipe(); }
+      pending = { question: r.question, topic: r.topic };
+      $("s-int").dataset.topic = /^q[1-5]$/.test(r.topic) ? r.topic : "followup";
+      $("ack").textContent = r.ack || "";
+      $("qbig").textContent = r.question;
+      renderSug(r.suggestions); updateFill(); speak(r.question);
+      $("s-int").animate([{ opacity: .4, transform: "translateX(24px)" }, { opacity: 1, transform: "none" }], { duration: 280, easing: "ease-out" });
+    } catch(e) {
+      $("thinking").hidden = true; flash($("qmsg"), "質問を用意できませんでした。もう一度「つぎへ」を押してください（" + e.message + "）");
+    } finally { $("b-answer").disabled = false; setProgress(); }
+  }
+  function startInterview(){
+    state.transcript = []; pending = null; save(); $("ans").value = ""; setProgress(); show("s-int"); askNext();
+  }
+  $("b-answer").onclick = async () => {
+    const ta = $("ans"); const text = ta.value.trim();
+    if (!pending) return askNext();
+    if (!text) { flash($("qmsg"), "ひとことだけでも入れてください。タップで候補を入れてもOKです"); return; }
+    state.transcript.push({ question: pending.question, topic: pending.topic, answer: text }); save();
+    ta.value = ""; pending = null; setProgress();
+    askNext();
+  };
+  attachMic($("mic-ans"), $("ans"));
+
+  $("b-start").onclick = () => { state.name = $("name").value.trim(); save(); startInterview(); };
+
+  // ---- 直感チェック（3秒スワイプ）
+  const SWIPES = ["転職は逃げではなく投資だ", "お金より時間がほしい", "一人の時間がないと疲れる", "計画より勢いで動くほうだ", "家族の予定を自分より優先する", "新しい店や場所を試すのが好き", "朝のほうが頭が回る", "人の相談にのるのが好き", "10年後も今の仕事をしていると思う", "迷ったら「やる」を選ぶ"];
+  const SWIPE_MS = 3000;
+  let swipeIdx = 0, swipeTimer = null, swipeStart = 0, swipeBusy = false;
+  function startSwipe(){ state.swipes = []; swipeIdx = 0; save(); show("s-swipe"); nextCard(); }
+  function nextCard(){
+    if (swipeIdx >= SWIPES.length) return finishSwipe();
+    const card = $("card"); card.className = "card2"; card.style.transform = ""; card.style.opacity = "1";
+    $("cardtext").textContent = SWIPES[swipeIdx]; $("cardn").textContent = (swipeIdx + 1) + " / " + SWIPES.length;
+    const bar = $("tbar"); bar.style.transition = "none"; bar.style.width = "100%"; void bar.offsetWidth; bar.style.transition = "width " + SWIPE_MS + "ms linear"; bar.style.width = "0%";
+    swipeStart = performance.now(); swipeBusy = false;
+    clearTimeout(swipeTimer); swipeTimer = setTimeout(() => answerCard("pass"), SWIPE_MS);
+  }
+  function answerCard(ans){
+    if (swipeBusy) return; swipeBusy = true; clearTimeout(swipeTimer);
+    const ms = Math.round(performance.now() - swipeStart);
+    state.swipes.push({ text: SWIPES[swipeIdx], answer: ans, ms }); save();
+    const card = $("card"); card.className = "card2";
+    card.style.transform = ans === "yes" ? "translateX(140%) rotate(18deg)" : ans === "no" ? "translateX(-140%) rotate(-18deg)" : "translateY(40px)"; card.style.opacity = "0";
+    swipeIdx++; setTimeout(nextCard, 200);
+  }
+  function finishSwipe(){
+    const sw = state.swipes || [];
+    const yes = sw.filter(x => x.answer === "yes").map(x => x.text), no = sw.filter(x => x.answer === "no").map(x => x.text), pass = sw.filter(x => x.answer === "pass");
+    const answered = sw.filter(x => x.answer !== "pass");
+    const avg = answered.length ? (answered.reduce((a, x) => a + x.ms, 0) / answered.length / 1000).toFixed(1) : "-";
+    const text = `そう思う: ${yes.join("、") || "なし"}。ちがう: ${no.join("、") || "なし"}。パス: ${pass.length}枚。平均${avg}秒で回答`;
+    state.transcript = state.transcript.filter(t => t.topic !== "swipe");
+    state.transcript.push({ topic: "swipe", question: "直感チェック（3秒）", answer: text }); save();
+    generate();
+  }
+  $("b-yes").onclick = () => answerCard("yes"); $("b-no").onclick = () => answerCard("no");
+  document.addEventListener("keydown", (e) => { if ($("s-swipe").hidden) return; if (e.key === "ArrowRight") answerCard("yes"); if (e.key === "ArrowLeft") answerCard("no"); });
+  (function drag(){
+    const card = $("card"); let sx = 0, dx = 0, on = false;
+    card.addEventListener("pointerdown", (e) => { on = true; sx = e.clientX; dx = 0; card.classList.add("drag"); card.setPointerCapture(e.pointerId); });
+    card.addEventListener("pointermove", (e) => { if (!on) return; dx = e.clientX - sx; card.style.transform = `translateX(${dx}px) rotate(${dx / 12}deg)`; card.querySelector(".tag.yes").style.opacity = dx > 40 ? "1" : "0"; card.querySelector(".tag.no").style.opacity = dx < -40 ? "1" : "0"; });
+    const up = () => { if (!on) return; on = false; card.classList.remove("drag"); card.querySelectorAll(".tag").forEach(t => t.style.opacity = "0"); if (dx > 80) answerCard("yes"); else if (dx < -80) answerCard("no"); else card.style.transform = ""; };
+    card.addEventListener("pointerup", up); card.addEventListener("pointercancel", up);
+  })();
+
+  async function generate(){
+    $("loadtext").textContent = "あなたのWikiを書いています…"; show("s-load");
+    const payload = { name: state.name, transcript: state.transcript };
+    try {
+      const r = await fetch("/api/generate", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(payload) }).then(r=>r.json());
+      state.wiki = r.wiki; state.savedAt = new Date().toISOString();
+      state.diag = null; state.verdicts = {};
+      state.history = state.history || []; state.history.push({ at: state.savedAt, transcript: state.transcript, wiki: r.wiki });
+      save();
+      try {
+        const st = await fetch("/api/store", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ uid: state.uid || null, name: state.name, wiki: state.wiki, transcript: state.transcript, history: state.history }) }).then(r=>r.json());
+        if (st.uid) { state.uid = st.uid; save(); history.replaceState(null, "", "/wiki/" + st.uid); }
+      } catch(_) {}
+      if (r.backend === "template") flash($("wmsg"), "AIに接続していないため、定型文で作りました。");
+      renderWiki(); show("s-wiki");
+    } catch(e) {
+      show("s-int"); flash($("qmsg"), "作れませんでした。「答える」でもう一度試してください（" + e.message + "）");
+    }
+  }
+
+  function renderDiag(){
+    const d = state.diag; if (!d) return;
+    $("d-type").textContent = "あなたは『" + d.type + "』タイプ";
+    $("d-line").textContent = d.line || "";
+    const w = $("d-guesses"); w.innerHTML = "";
+    (d.guesses || []).forEach((g, i) => {
+      const row = document.createElement("div"); row.className = "guess";
+      const t = document.createElement("div"); t.className = "g"; t.textContent = g;
+      const yn = document.createElement("div"); yn.className = "yn";
+      const y = document.createElement("button"); y.className = "y"; y.type = "button"; y.textContent = "当たり";
+      const n = document.createElement("button"); n.className = "n"; n.type = "button"; n.textContent = "ちがう";
+      const sync = () => { y.setAttribute("aria-pressed", state.verdicts[i] === true ? "true" : "false"); n.setAttribute("aria-pressed", state.verdicts[i] === false ? "true" : "false"); };
+      y.onclick = () => { state.verdicts[i] = state.verdicts[i] === true ? undefined : true; save(); sync(); };
+      n.onclick = () => { state.verdicts[i] = state.verdicts[i] === false ? undefined : false; save(); sync(); };
+      sync(); yn.appendChild(y); yn.appendChild(n); row.appendChild(t); row.appendChild(yn); w.appendChild(row);
+    });
+  }
+  function mergeVerdicts(){
+    const d = state.diag; if (!d) return;
+    const hits = (d.guesses || []).filter((g, i) => state.verdicts[i] === true);
+    let wiki = (state.wiki || "").replace(/\n## 当たっていたこと[\s\S]*?(?=\n## |$)/, "");
+    if (hits.length) {
+      const block = "\n## 当たっていたこと\n" + hits.map(h => h + "［診断］").join("\n");
+      wiki = wiki.includes("## AIへのメモ") ? wiki.replace("\n## AIへのメモ", block + "\n## AIへのメモ") : wiki + block;
+    }
+    state.wiki = wiki; save();
+  }
+  $("b-diag-next").onclick = () => { mergeVerdicts(); renderWiki(); show("s-wiki"); };
+  $("b-diag-copy").onclick = async () => {
+    const d = state.diag; if (!d) return;
+    const text = "わたしは『" + d.type + "』タイプでした。" + (d.line || "") + "\n#わたしのWiki";
+    try { await navigator.clipboard.writeText(text); flash($("dmsg"), "コピーしました。"); } catch(_) { flash($("dmsg"), "コピーできませんでした。"); }
+  };
+
+  function sections(wiki){
+    const out = []; let cur = null;
+    (wiki || "").split("\n").forEach(l => { l = l.trim(); if (!l) return; if (l.startsWith("## ")) { cur = { h: l.slice(3), lines: [] }; out.push(cur); } else if (cur) cur.lines.push(l); });
+    return out;
+  }
+  function lineNode(line){
+    const src = []; const text = line.replace(/［([^］]+)］/g, (_, x) => { src.push(x); return ""; }).replace(/^[-・]\s*/, "").trim();
+    const node = document.createElement(line.startsWith("- ") || line.startsWith("・") ? "li" : "p");
+    node.textContent = text; src.forEach(x => { const b = document.createElement("sup"); b.className = "ref"; b.textContent = "[" + x + "]"; node.appendChild(b); });
+    return node;
+  }
+  function byTopic(topic){ return (state.transcript || []).filter(t => t.topic === topic).map(t => t.answer).join(" "); }
+  function editSection(idx, sc, body){
+    body.innerHTML = ""; body.className = "secbody secedit";
+    const ta = document.createElement("textarea"); ta.value = sc.lines.join("\n"); ta.setAttribute("aria-label", sc.h + " を編集"); body.appendChild(ta);
+    const row = document.createElement("div"); row.className = "row";
+    const cancel = document.createElement("button"); cancel.className = "btn ghost"; cancel.type = "button"; cancel.textContent = "やめる"; cancel.onclick = () => renderWiki();
+    const ok = document.createElement("button"); ok.className = "btn primary"; ok.type = "button"; ok.textContent = "保存する";
+    ok.onclick = async () => {
+      const lines = ta.value.split("\n").map(x => x.trim()).filter(Boolean);
+      const secs = sections(state.wiki); if (!secs[idx]) return renderWiki();
+      secs[idx].lines = lines;
+      const text = secs.map(x => "## " + x.h + "\n" + x.lines.join("\n")).join("\n");
+      if (text.trim() === (state.wiki || "").trim()) return renderWiki();
+      state.wiki = text; state.savedAt = new Date().toISOString();
+      state.history = state.history || []; state.history.push({ at: state.savedAt, transcript: state.transcript, wiki: text, edit: true });
+      save(); await persist(); renderWiki();
+      flash($("wmsg"), "「" + sc.h + "」を保存しました（第" + state.history.length + "版）");
+    };
+    row.appendChild(cancel); row.appendChild(ok); body.appendChild(row); ta.focus();
+  }
+  function renderWiki(){
+    const who = state.name || "わたし";
+    document.title = who + " - わたしのWiki";
+    $("wikiurl").textContent = state.uid ? location.host + "/wiki/" + state.uid : "";
+    $("b-url").hidden = !state.uid;
+    $("wikititle").textContent = who;
+    $("histtitle").textContent = who + ": 履歴";
+    $("savedat").textContent = state.savedAt ? "最終更新 " + new Date(state.savedAt).toLocaleString("ja-JP") + "（第" + ((state.history || []).length || 1) + "版）" : "";
+    const secs = sections(state.wiki);
+    const toc = $("toc"); toc.innerHTML = ""; secs.forEach(sc => { const li = document.createElement("li"); li.textContent = sc.h; toc.appendChild(li); });
+    const el = $("wiki"); el.innerHTML = "";
+    secs.forEach((sc, idx) => {
+      const h = document.createElement("h3"); h.textContent = sc.h; const ed = document.createElement("span"); ed.className = "ed"; ed.textContent = "[編集]"; ed.title = "この項目だけ書き直す"; h.appendChild(ed); el.appendChild(h);
+      const body = document.createElement("div"); body.className = "secbody";
+      let ul = null;
+      sc.lines.forEach(line => { const n = lineNode(line); if (n.tagName === "LI") { if (!ul) { ul = document.createElement("ul"); body.appendChild(ul); } ul.appendChild(n); } else { ul = null; body.appendChild(n); } });
+      ed.onclick = () => editSection(idx, sc, body);
+      el.appendChild(body);
+    });
+    const ib = $("infobox"); ib.innerHTML = "";
+    const cap = document.createElement("caption"); cap.textContent = who; ib.appendChild(cap);
+    const rows = [];
+    if (state.diag && state.diag.type) rows.push(["タイプ", state.diag.type, true]);
+    rows.push(["年代・暮らし", byTopic("q4")], ["毎日", byTopic("q1")], ["好きなこと", byTopic("q2")], ["気になること", byTopic("q3")], ["これから", byTopic("q5")]);
+    const hits = (state.diag && state.diag.guesses || []).filter((g, i) => state.verdicts && state.verdicts[i] === true);
+    if (hits.length) rows.push(["当たった推測", hits.join("、")]);
+    rows.push(["版", String((state.history || []).length || 1)]);
+    rows.forEach(([k, v, lk]) => { if (!v) return; const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = k; const td = document.createElement("td"); td.textContent = v; if (lk) td.className = "lk"; tr.appendChild(th); tr.appendChild(td); ib.appendChild(tr); });
+  }
+
+  // ---- 履歴（思考の遍歴）
+  function sampleFuture(rev){
+    const at = new Date(rev.at); at.setMonth(at.getMonth() + 6);
+    let w = rev.wiki || "";
+    w = w.replace(/## 気になっていること\n[^\n]*/, "## 気になっていること\n最近は健康、家族が気になっています。［Q3］");
+    w = w.replace(/## 大事にしていること\n[^\n]*/, "## 大事にしていること\n畑を借りて、季節の野菜を育てたい［Q5］");
+    w = w.replace(/## 好きなこと\n([^\n]*)/, (m, a) => "## 好きなこと\n" + (a.includes("が好きです") ? a.replace("が好きです", "と畑仕事が好きです") : a));
+    return { at: at.toISOString(), wiki: w, sample: true };
+  }
+  function renderHist(){
+    const revs = (state.history || []).slice();
+    if (revs.length && revs.length < 2) revs.push(sampleFuture(revs[revs.length - 1]));
+    const ul = $("revs"); ul.innerHTML = "";
+    revs.slice().reverse().forEach((r, i) => {
+      const li = document.createElement("li");
+      const d = document.createElement("span"); d.className = "d"; d.textContent = new Date(r.at).toLocaleString("ja-JP", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }); li.appendChild(d);
+      const t = document.createElement("span"); t.textContent = (r.diag && r.diag.type) ? "『" + (r.diag.type) + "』タイプ" : ""; li.appendChild(t);
+      if (r.edit) { const e = document.createElement("span"); e.className = "cur"; e.textContent = "手直し"; li.appendChild(e); }
+      if (i === 0) { const c = document.createElement("span"); c.className = "cur"; c.textContent = "（最新）"; li.appendChild(c); }
+      if (r.sample) { const sm = document.createElement("span"); sm.className = "sample"; sm.textContent = "サンプル: 半年後にもう一度答えたときの想像図"; li.appendChild(sm); }
+      ul.appendChild(li);
+    });
+    const tbl = $("diff"); tbl.innerHTML = "";
+    if (revs.length < 2) { $("difftitle").textContent = "版の比較"; $("diffai").textContent = "まだ1版だけです。もう一度答えると比較できます。"; return; }
+    const oldR = revs[revs.length - 2], newR = revs[revs.length - 1];
+    const fmt = (r) => new Date(r.at).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" });
+    $("difftitle").textContent = fmt(oldR) + " の版 → " + fmt(newR) + " の版";
+    const A = Object.fromEntries(sections(oldR.wiki).map(x => [x.h, x.lines.map(l => l.replace(/［[^］]*］/g, "")).join(" ")]));
+    const B = Object.fromEntries(sections(newR.wiki).map(x => [x.h, x.lines.map(l => l.replace(/［[^］]*］/g, "")).join(" ")]));
+    const heads = [...new Set([...Object.keys(A), ...Object.keys(B)])].filter(h => h !== "AIへのメモ");
+    const changed = [], same = [];
+    const thr = document.createElement("tr"); ["項目", fmt(oldR), fmt(newR)].forEach(x => { const th = document.createElement("th"); th.textContent = x; thr.appendChild(th); }); tbl.appendChild(thr);
+    heads.forEach(h => {
+      const a = A[h] || "", b = B[h] || ""; const diff = a !== b; (diff ? changed : same).push(h);
+      const tr = document.createElement("tr");
+      const td0 = document.createElement("td"); td0.className = "sec"; td0.textContent = h;
+      const td1 = document.createElement("td"); td1.textContent = a || "（なし）"; if (diff) td1.className = "del";
+      const td2 = document.createElement("td"); td2.textContent = b || "（なし）"; if (diff) td2.className = "add";
+      tr.appendChild(td0); tr.appendChild(td1); tr.appendChild(td2); tbl.appendChild(tr);
+    });
+    $("diffai").textContent = (changed.length ? "変わったこと: " + changed.join("、") + "。" : "変わったことはありません。") + (same.length ? " 変わらないこと: " + same.join("、") + "。" : "") + (newR.sample ? "（AIをつなぐと、この変化を3行の文章で要約します）" : "");
+  }
+  async function persist(){
+    try {
+      const st = await fetch("/api/store", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ uid: state.uid || null, name: state.name, wiki: state.wiki, transcript: state.transcript, history: state.history }) }).then(r=>r.json());
+      if (st.uid && !state.uid) { state.uid = st.uid; save(); history.replaceState(null, "", "/wiki/" + st.uid); }
+    } catch(_) {}
+  }
+  function openEdit(){ $("edittitle").textContent = (state.name || "わたし") + " を編集中"; $("edittext").value = state.wiki || ""; show("s-edit"); }
+  $("t-edit").onclick = openEdit; $("t-edit2").onclick = openEdit;
+  $("b-edit-cancel").onclick = () => show("s-wiki");
+  $("t-view2").onclick = () => show("s-wiki");
+  $("t-hist3").onclick = () => { renderHist(); show("s-hist"); };
+  $("b-edit-save").onclick = async () => {
+    const text = $("edittext").value.trim();
+    if (!text) { flash($("emsg"), "空では保存できません"); return; }
+    if (text === (state.wiki || "").trim()) { show("s-wiki"); return; }
+    state.wiki = text; state.savedAt = new Date().toISOString();
+    state.history = state.history || []; state.history.push({ at: state.savedAt, transcript: state.transcript, wiki: text, edit: true });
+    save(); await persist(); renderWiki(); show("s-wiki");
+    flash($("wmsg"), "保存しました（第" + state.history.length + "版）");
+  };
+  $("t-hist").onclick = () => { renderHist(); show("s-hist"); };
+  $("b-hist2").onclick = () => { renderHist(); show("s-hist"); };
+  $("t-view").onclick = () => show("s-wiki");
+  $("b-hist-back").onclick = () => show("s-wiki");
+
+  $("b-url").onclick = async (e) => {
+    e.preventDefault(); if (!state.uid) return;
+    const u = location.origin + "/wiki/" + state.uid;
+    try { await navigator.clipboard.writeText(u); flash($("wmsg"), "URLをコピーしました: " + u); } catch(_) { flash($("wmsg"), u); }
+  };
+  $("b-copy").onclick = async () => {
+    const text = "以下は私のプロフィール（わたしのWiki）です。これを踏まえて、私に合わせて答えてください。\n\n" + (state.wiki || "").replace(/［[^］]*］/g, "");
+    try { await navigator.clipboard.writeText(text); flash($("wmsg"), "コピーしました。ChatGPTやClaudeに貼ってください。"); }
+    catch(_) { flash($("wmsg"), "コピーできませんでした。長押しで選択してコピーしてください。"); }
+  };
+  $("b-reset").onclick = () => { if (!confirm("答えとWikiを消して最初からにしますか？")) return; state = { name:"", transcript:[], wiki:"", savedAt:"", history: state.history || [], diag:null, verdicts:{}, uid:"" }; save(); history.replaceState(null, "", "/"); $("name").value = ""; show("s-start"); };
+  $("b-ask").onclick = () => { show("s-ask"); };
+  $("b-ask-back").onclick = () => show("s-wiki");
+  $("b-towiki").onclick = () => show("s-wiki");
+  $("b-again").onclick = () => { $("rough").value = ""; selectedCat = ""; renderCats(); show("s-ask"); };
+
+  let selectedCat = "";
+  function renderCats(){ const w = $("cats"); w.innerHTML = ""; CATS.forEach(c => w.appendChild(chip(c, selectedCat === c, () => { selectedCat = selectedCat === c ? "" : c; renderCats(); }))); }
+  renderCats(); attachMic($("mic-rough"), $("rough"));
+
+  $("b-fix").onclick = async () => {
+    const rough = $("rough").value.trim();
+    if (!rough && !selectedCat) { flash($("amsg"), "どれか押すか、ひとこと入れてください"); return; }
+    $("loadtext").textContent = "あなたに合わせて質問を整えています…"; show("s-load");
+    try {
+      const r = await fetch("/api/rewrite", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ wiki: state.wiki, category: selectedCat, rough }) }).then(r=>r.json());
+      $("r-before").textContent = (selectedCat ? "「" + selectedCat + "」" : "") + (rough ? " " + rough : "");
+      $("r-after").textContent = r.question || "";
+      $("r-ans").textContent = r.answer || "";
+      show("s-res");
+    } catch(e) { show("s-ask"); flash($("amsg"), "整えられませんでした。もう一度押してください（" + e.message + "）"); }
+  };
+
+  // ---- 起動時
+  (async () => {
+    const m = location.pathname.match(/^\/wiki\/([a-z0-9]{4,12})$/);
+    if (m) {
+      try {
+        const rec = await fetch("/api/store?uid=" + m[1]).then(r => r.ok ? r.json() : null);
+        if (rec && rec.wiki) {
+          state = { ...state, uid: rec.uid, name: rec.name || "", wiki: rec.wiki, transcript: rec.transcript || [], history: rec.history || [], savedAt: rec.savedAt || "", diag: null, verdicts: {} };
+          save(); renderWiki(); show("s-wiki"); return;
+        }
+      } catch(_) {}
+      flash($("wmsg"), "そのWikiは見つかりませんでした。");
+    }
+    if (state.wiki) { renderWiki(); show("s-wiki"); } else { $("name").value = state.name || ""; show("s-start"); }
+  })();
+})();
+</script>
+</body>
+</html>

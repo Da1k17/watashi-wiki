@@ -1,0 +1,8 @@
+{
+  "name": "watashi-wiki",
+  "version": "0.1.0",
+  "private": true,
+  "description": "打たずに、選んで話すだけで自分のWikiができるアプリ（ハッカソンMVP）",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "@anthropic-ai/sdk": "latest" }
+}
