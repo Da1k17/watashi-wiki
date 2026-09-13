@@ -79,7 +79,17 @@ function callCli(system, user) {
   });
 }
 
+// サーバー本体(server.js)のレート制限が無い環境（Vercel関数など）向けの最小ガード
+const guard = { start: Date.now(), n: 0, max: 600, windowMs: 60 * 60 * 1000 };
+function allow() {
+  const now = Date.now();
+  if (now - guard.start > guard.windowMs) { guard.start = now; guard.n = 0; }
+  guard.n++; return guard.n <= guard.max;
+}
+
 async function complete(system, user, maxTokens = 2000) {
+  if (!allow()) throw new Error("混み合っています。しばらく待ってからもう一度お試しください。");
+  user = String(user || "").slice(0, 20000);
   const b = backend();
   if (b === "api") return { text: await callApi(system, user, maxTokens), backend: "api" };
   if (b === "cli") return { text: await callCli(system, user), backend: "cli" };
