@@ -152,6 +152,16 @@ textarea{min-height:96px;resize:vertical}
 .diff td.add{background:#a3d3ff}
 .diff-ai{background:#fff;border-left:4px solid #36c;padding:10px 12px;margin:14px 0;font-size:14.5px;color:#202122;line-height:1.7}
 .wp .small,.wp .muted{color:#54595d}
+.wp-tags{border-top:1px solid #a2a9b1;margin-top:18px;padding-top:12px}
+.wp-tags .lab{color:#54595d}
+.wp-tags .chip{font-size:15px;min-height:40px;padding:4px 14px;color:#3366cc;border-color:#a2a9b1;background:#fff}
+.wp-tags .chip[aria-pressed="true"]{background:#3366cc;color:#fff;border-color:#3366cc}
+.modes{display:flex;gap:8px;margin:10px 0 6px}
+.modes button{flex:1;min-height:40px;border-radius:8px;border:1px solid #a2a9b1;background:#f8f9fa;color:#202122;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.modes button.on{background:#202122;color:#fff;border-color:#202122}
+.sugq{margin:8px 0 0;padding-left:1.4em;color:#202122}
+.sugq li{margin:6px 0;font-size:15.5px;line-height:1.6}
+.sugq li a{color:#3366cc;font-size:13px;margin-left:8px;text-decoration:none}
 .wp .wiki h3 .ed{cursor:pointer}
 .wp .secedit textarea{min-height:110px;font-size:15.5px;line-height:1.6;margin-top:4px;background:#fff;color:#202122;border:1.5px solid #a2a9b1}
 .wp .secedit .row{margin-top:8px}
@@ -261,9 +271,16 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
       </div>
       <table class="infobox" id="infobox"></table>
     </div>
+    <div class="wp-tags">
+      <div class="lab">興味タグ</div>
+      <div class="chips" id="tags"></div>
+      <div class="modes"><button id="m-self" class="on" type="button">自分が聞きたいこと</button><button id="m-other" type="button">この人に聞くなら</button></div>
+      <p class="small muted" id="tagshint" style="margin:0">タグを押すと、質問を3つ考えます。</p>
+      <ol class="sugq" id="sugq"></ol>
+    </div>
     <div class="msg" id="wmsg"></div>
     <div class="btnbar">
-      <div class="row"><button class="btn primary" id="b-ask">このWikiで質問する</button></div>
+      <div class="row" hidden><button class="btn primary" id="b-ask">このWikiで質問する</button></div>
       <div class="row"><button class="btn" id="b-copy">AI用にコピー</button><button class="btn" id="b-hist2">履歴を表示</button></div>
       <p class="small muted">コピーしたものをChatGPTやClaudeに貼ると、あなたに合わせた返事になります。</p>
       <div class="row"><button class="btn ghost" id="b-reset">最初から</button></div>
@@ -596,7 +613,42 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     if (hits.length) rows.push(["当たった推測", hits.join("、")]);
     rows.push(["版", String((state.history || []).length || 1)]);
     rows.forEach(([k, v, lk]) => { if (!v) return; const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = k; const td = document.createElement("td"); td.textContent = v; if (lk) td.className = "lk"; tr.appendChild(th); tr.appendChild(td); ib.appendChild(tr); });
+    renderTags();
   }
+
+  // ---- 興味タグ → 質問サジェスト
+  let sugMode = "self", curTag = "";
+  function extractTags(){
+    const src = (state.transcript || []).filter(t => ["q1","q2","q3","q5"].includes(t.topic)).map(t => t.answer).join("、");
+    const stop = new Set(["です","ます","こと","もの","最近","毎日","中心","好き","気に","なって","います","した","して","たい","ので","から","そして","また","あと","特に","ない","なし","私","わたし","自分"]);
+    const parts = src.split(/[、。，,・／\/\s]+|と|や|が好き|が気になる|について|したい|しています|です|ます/).map(x => x.trim()).filter(x => x.length >= 2 && x.length <= 8 && !stop.has(x) && !/^\d/.test(x));
+    const tags = []; parts.forEach(p => { if (!tags.includes(p)) tags.push(p); });
+    return tags.slice(0, 10);
+  }
+  function renderTags(){
+    const w = $("tags"); w.innerHTML = ""; $("sugq").innerHTML = "";
+    const tags = extractTags();
+    if (!tags.length) { $("tagshint").textContent = "答えからタグが作れませんでした。編集で好きなことを足してみてください。"; return; }
+    $("tagshint").textContent = sugMode === "self" ? "タグを押すと、あなたがAIや詳しい人に聞くとよい質問を3つ考えます。" : "タグを押すと、この人に聞くと会話が深まる質問を3つ考えます。";
+    tags.forEach(t => w.appendChild(chip(t, curTag === t, () => suggest(t))));
+    const isOwner = !!(state.uid && load() && load().uid === state.uid);
+    $("m-self").classList.toggle("on", sugMode === "self"); $("m-other").classList.toggle("on", sugMode === "other");
+  }
+  async function suggest(tag){
+    curTag = tag; renderTags();
+    const ol = $("sugq"); ol.innerHTML = ""; const li0 = document.createElement("li"); li0.textContent = "考えています…"; ol.appendChild(li0);
+    try {
+      const r = await fetch("/api/suggest", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ wiki: state.wiki, tag, mode: sugMode }) }).then(r=>r.json());
+      ol.innerHTML = "";
+      (r.questions || []).forEach(q => {
+        const li = document.createElement("li"); li.textContent = q;
+        const a = document.createElement("a"); a.href = "#"; a.textContent = "コピー"; a.onclick = async (e) => { e.preventDefault(); try { await navigator.clipboard.writeText(q); flash($("wmsg"), "コピーしました。ChatGPTやClaudeに貼ってください。"); } catch(_) {} };
+        li.appendChild(a); ol.appendChild(li);
+      });
+    } catch(e) { ol.innerHTML = ""; flash($("wmsg"), "質問を考えられませんでした（" + e.message + "）"); }
+  }
+  $("m-self").onclick = () => { sugMode = "self"; renderTags(); if (curTag) suggest(curTag); };
+  $("m-other").onclick = () => { sugMode = "other"; renderTags(); if (curTag) suggest(curTag); };
 
   // ---- 履歴（思考の遍歴）
   function sampleFuture(rev){
@@ -705,7 +757,9 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
       try {
         const rec = await fetch("/api/store?uid=" + m[1]).then(r => r.ok ? r.json() : null);
         if (rec && rec.wiki) {
+          const mine = load(); const isMine = !!(mine && mine.uid === rec.uid);
           state = { ...state, uid: rec.uid, name: rec.name || "", wiki: rec.wiki, transcript: rec.transcript || [], history: rec.history || [], savedAt: rec.savedAt || "", diag: null, verdicts: {} };
+          sugMode = isMine ? "self" : "other";
           save(); renderWiki(); show("s-wiki"); return;
         }
       } catch(_) {}
