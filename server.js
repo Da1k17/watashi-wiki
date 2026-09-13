@@ -5,7 +5,7 @@ const path = require("path");
 
 const PORT = Number(process.env.PORT || 3456);
 const PUB = path.join(__dirname, "public");
-const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml" };
+const TYPES = { ".html": "text/html; charset=utf-8", ".js": "text/javascript; charset=utf-8", ".css": "text/css; charset=utf-8", ".json": "application/json", ".txt": "text/plain; charset=utf-8", ".md": "text/markdown; charset=utf-8", ".png": "image/png", ".svg": "image/svg+xml" };
 
 function shim(res) {
   res.status = (c) => { res.statusCode = c; return res; };

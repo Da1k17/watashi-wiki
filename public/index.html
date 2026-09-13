@@ -4,6 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>わたしのWiki</title>
+<meta name="description" content="AIインタビュアーの質問に声・文字・タップで答えると、Wikipedia風の自分のページができ、同じ質問に答え続けた版の差分で考えの変化が見えるWebアプリ。AI木曜会×AGIラボ 合同AIハッカソン 2026-09-13 の作品。説明は /llms.txt と /api/about にあります。">
+<!--
+  わたしのWiki（単一ページ）
+  画面の順: s-start(はじめる) → s-int(インタビュー 1問1画面) → s-swipe(直感チェック10枚) → s-load → s-wiki(Wikipedia風ページ, /wiki/<UID>)
+            → s-edit(全文編集) / s-hist(履歴と差分)。見出し横の[編集]は項目ごとの編集。本文下の興味タグは質問提案。
+  API: /api/interview, /api/generate, /api/suggest, /api/store, /api/status, /api/about。作品説明: /llms.txt, README.md
+-->
 <style>
 :root{--bg:#F4F7F2;--card:#fff;--ink:#1D2A24;--muted:#5C685F;--line:#D2DAD1;--accent:#1F6F5B;--accent-ink:#fff;--accent-soft:rgba(31,111,91,.11);--amber:#B86F0E;--amber-soft:rgba(184,111,14,.13);--blue:#2B57D6;--blue-soft:rgba(43,87,214,.09);--danger:#B23A3A}
 *{box-sizing:border-box}
@@ -205,7 +212,11 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
       <input type="text" id="name" placeholder="例: ダイキ" autocomplete="nickname">
     </div>
     <div class="row"><button class="btn primary" id="b-start">はじめる</button></div>
-    <p class="small muted" style="margin-top:14px">答えた内容はこの端末のブラウザにだけ残ります。年齢は年代で聞き、本名や住所は聞きません。</p>
+    <p class="small muted" style="margin-top:14px">答えた内容はこの端末のブラウザと、共有用URLのためにサーバー内に保存されます。年齢は年代で聞き、本名や住所は聞きません。</p>
+    <details style="margin-top:10px;font-size:14px"><summary style="cursor:pointer">この作品について</summary>
+      <p style="margin:8px 0 4px">5問のインタビューと10枚の直感チェックに答えると、Wikipedia風の自分のページ（/wiki/UID）ができます。項目ごとの編集、版の履歴と差分、興味タグからの質問提案、AI用のコピーができます。AIが動く場面は「次の質問」「Wikiの生成」「質問の提案」の3か所で、画面下に接続状態が出ます。</p>
+      <p style="margin:0">詳しい説明: <a href="/llms.txt" style="color:inherit">/llms.txt</a>、<a href="/api/about" style="color:inherit">/api/about</a>、<a href="https://github.com/Da1k17/watashi-wiki" style="color:inherit">GitHub</a></p>
+    </details>
   </section>
 
   <!-- ② インタビュー（1問1画面・穴埋め） -->
