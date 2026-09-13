@@ -18,9 +18,18 @@ function loadKey() {
   return null;
 }
 
+function envFromSecrets(name) {
+  if (process.env[name]) return process.env[name];
+  try {
+    const txt = fs.readFileSync(path.join(os.homedir(), ".config", "secrets.env"), "utf8");
+    const m = txt.match(new RegExp("^\\s*(?:export\\s+)?" + name + "\\s*=\\s*[\"']?([^\"'\\n]+)[\"']?", "m"));
+    if (m) return m[1].trim();
+  } catch (_) {}
+  return null;
+}
 function backend() {
   if (loadKey()) return "api";
-  if (process.env.LLM_BACKEND === "cli") return "cli";
+  if (envFromSecrets("LLM_BACKEND") === "cli") return "cli";
   return "none";
 }
 

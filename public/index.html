@@ -230,7 +230,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
   <section id="s-swipe" hidden>
     <div class="top"><span>直感チェック</span><span id="cardn"></span></div>
     <div class="tbar"><i id="tbar"></i></div>
-    <p class="hint">考えないで。3秒で右か左へ。時間切れはパス</p>
+    <p class="hint">考えないで。3秒で右か左へ。時間切れはパス <a href="#" id="b-slow" style="color:#FFB347">ゆっくり（10秒）にする</a></p>
     <div class="cardwrap"><div class="card2" id="card"><span class="tag yes">そう思う</span><span class="tag no">ちがう</span><span id="cardtext"></span></div></div>
     <div class="swbtns"><button class="btn no" id="b-no">← ちがう</button><button class="btn yes" id="b-yes">そう思う →</button></div>
   </section>
@@ -461,7 +461,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
 
   // ---- 直感チェック（3秒スワイプ）
   const SWIPES = ["転職は逃げではなく投資だ", "お金より時間がほしい", "一人の時間がないと疲れる", "計画より勢いで動くほうだ", "家族の予定を自分より優先する", "新しい店や場所を試すのが好き", "朝のほうが頭が回る", "人の相談にのるのが好き", "10年後も今の仕事をしていると思う", "迷ったら「やる」を選ぶ"];
-  const SWIPE_MS = 3000;
+  let SWIPE_MS = new URLSearchParams(location.search).get("slow") ? 10000 : 3000;
   let swipeIdx = 0, swipeTimer = null, swipeStart = 0, swipeBusy = false;
   function startSwipe(){ state.swipes = []; swipeIdx = 0; save(); show("s-swipe"); nextCard(); }
   function nextCard(){
@@ -491,6 +491,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     generate();
   }
   $("b-yes").onclick = () => answerCard("yes"); $("b-no").onclick = () => answerCard("no");
+  $("b-slow").onclick = (e) => { e.preventDefault(); SWIPE_MS = SWIPE_MS === 3000 ? 10000 : 3000; $("b-slow").textContent = SWIPE_MS === 3000 ? "ゆっくり（10秒）にする" : "はやく（3秒）に戻す"; clearTimeout(swipeTimer); nextCard(); };
   document.addEventListener("keydown", (e) => { if ($("s-swipe").hidden) return; if (e.key === "ArrowRight") answerCard("yes"); if (e.key === "ArrowLeft") answerCard("no"); });
   (function drag(){
     const card = $("card"); let sx = 0, dx = 0, on = false;
@@ -543,7 +544,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     let wiki = (state.wiki || "").replace(/\n## 当たっていたこと[\s\S]*?(?=\n## |$)/, "");
     if (hits.length) {
       const block = "\n## 当たっていたこと\n" + hits.map(h => h + "［診断］").join("\n");
-      wiki = wiki.includes("## AIへのメモ") ? wiki.replace("\n## AIへのメモ", block + "\n## AIへのメモ") : wiki + block;
+      wiki = wiki + block;
     }
     state.wiki = wiki; save();
   }
@@ -679,7 +680,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     $("difftitle").textContent = fmt(oldR) + " の版 → " + fmt(newR) + " の版";
     const A = Object.fromEntries(sections(oldR.wiki).map(x => [x.h, x.lines.map(l => l.replace(/［[^］]*］/g, "")).join(" ")]));
     const B = Object.fromEntries(sections(newR.wiki).map(x => [x.h, x.lines.map(l => l.replace(/［[^］]*］/g, "")).join(" ")]));
-    const heads = [...new Set([...Object.keys(A), ...Object.keys(B)])].filter(h => h !== "AIへのメモ");
+    const heads = [...new Set([...Object.keys(A), ...Object.keys(B)])].filter(h => h !== "AIへのメモ" && h !== "AIに知っておいてほしいこと");
     const changed = [], same = [];
     const thr = document.createElement("tr"); ["項目", fmt(oldR), fmt(newR)].forEach(x => { const th = document.createElement("th"); th.textContent = x; thr.appendChild(th); }); tbl.appendChild(thr);
     heads.forEach(h => {

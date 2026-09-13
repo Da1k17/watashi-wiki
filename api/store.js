@@ -2,7 +2,8 @@
 // ローカルMVP用にJSONファイルへ保存（Vercel等では永続化されないので、公開時はDBに置き換える）
 const fs = require("fs");
 const path = require("path");
-const FILE = path.join(__dirname, "..", "data", "wikis.json");
+// Vercel等の読み取り専用環境では /tmp に保存（インスタンス内のみ・一時的）
+const FILE = process.env.VERCEL ? "/tmp/wikis.json" : path.join(__dirname, "..", "data", "wikis.json");
 
 function readAll() { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch (_) { return {}; } }
 function writeAll(all) { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(all, null, 1)); }

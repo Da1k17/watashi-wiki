@@ -1,0 +1,5 @@
+{
+  "rewrites": [
+    { "source": "/wiki/:uid", "destination": "/index.html" }
+  ]
+}
