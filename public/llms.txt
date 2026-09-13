@@ -23,11 +23,11 @@
 
 ## 実装済み / 未実装
 - 実装済み: 上記1〜8、/wiki/<UID> の保存と共有、版の履歴と差分。
-- 未実装（次の計画）: AIによる版の変化の要約、写真・友人からの入力、公開用の永続DB（現在はサーバー内ファイル）、らくらくフォン・商業施設向けの展開。
+- 未実装（次の計画）: AIによる版の変化の要約、写真・友人からの入力、らくらくフォン・商業施設向けの展開。
 
 ## 技術
 - Node.js（依存なしのHTTPサーバー）、public/index.html（単一ページ）、api/*.js（Vercel関数と同じ形）、@anthropic-ai/sdk、Cloudflare Tunnelで公開。
-- データ: 回答とWikiはブラウザのlocalStorageと、サーバーの data/wikis.json（/wiki/<UID> 用）。年齢は年代で聞き、住所・本名は聞かない。
+- データ: 回答とWikiはブラウザのlocalStorageと、Supabase（Postgres）の wikis テーブル（/wiki/<UID> 用）。DB未設定の環境ではサーバー内ファイルに自動フォールバック。年齢は年代で聞き、住所・本名は聞かない。
 - リポジトリ: https://github.com/Da1k17/watashi-wiki
 
 ## API

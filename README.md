@@ -31,7 +31,7 @@ node server.js
 ## 自分のWikiのURL（/wiki/UID）
 - 最後の質問に答えると、サーバーの data/wikis.json に保存され、URLが /wiki/xxxxxx に変わる（例: http://192.168.220.112:3456/wiki/y8ybyr）。同じWi-Fi内なら他の端末からも開ける
 - 「URLをコピー」でリンクをコピー。もう一度答えると同じUIDに新しい版が積まれ、「履歴を表示」で比較できる
-- 注意: この機能を入れたので、答えた内容は端末だけでなくサーバー（このMac）にも残る。公開する場合はDBに置き換える
+- 保存先: Supabase（テーブル `wikis`、東京リージョン）。`~/.config/secrets.env` の SUPABASE_URL / SUPABASE_KEY が無い環境では `data/wikis.json` に自動フォールバック。テーブル定義は `supabase/001_wikis.sql`、ファイル→DBの移行は `node scripts/migrate-to-supabase.js`
 
 ## 追加機能（14:40）
 - 直感チェック（任意）: Wikiページのボタンから10枚・3秒。結果と傾向3行が「直感で答えたこと」としてWikiに追加
