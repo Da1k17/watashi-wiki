@@ -244,6 +244,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     <p class="hint">考えないで。3秒で右か左へ。時間切れはパス <a href="#" id="b-slow" style="color:#FFB347">ゆっくり（10秒）にする</a></p>
     <div class="cardwrap"><div class="card2" id="card"><span class="tag yes">そう思う</span><span class="tag no">ちがう</span><span id="cardtext"></span></div></div>
     <div class="swbtns"><button class="btn no" id="b-no">← ちがう</button><button class="btn yes" id="b-yes">そう思う →</button></div>
+    <p class="hint"><a href="#" id="b-swipe-quit" style="color:rgba(255,255,255,.85)">やめてWikiに戻る</a></p>
   </section>
 
   <!-- 読み込み中 -->
@@ -293,6 +294,8 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     <div class="btnbar">
       <div class="row" hidden><button class="btn primary" id="b-ask">このWikiで質問する</button></div>
       <div class="row"><button class="btn" id="b-copy">AI用にコピー</button><button class="btn" id="b-hist2">履歴を表示</button></div>
+      <div class="row"><button class="btn" id="b-swipe">直感チェックをやってみる（10枚・3秒）</button></div>
+      <p class="small muted">やりたい人だけ。直感で答えた結果と考え方の傾向が、Wikiに1項目として加わります。</p>
       <p class="small muted">コピーしたものをChatGPTやClaudeに貼ると、あなたに合わせた返事になります。</p>
       <div class="row"><button class="btn ghost" id="b-reset">最初から</button></div>
     </div>
@@ -491,16 +494,27 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     card.style.transform = ans === "yes" ? "translateX(140%) rotate(18deg)" : ans === "no" ? "translateX(-140%) rotate(-18deg)" : "translateY(40px)"; card.style.opacity = "0";
     swipeIdx++; setTimeout(nextCard, 200);
   }
-  function finishSwipe(){
+  async function finishSwipe(){
     const sw = state.swipes || [];
-    const yes = sw.filter(x => x.answer === "yes").map(x => x.text), no = sw.filter(x => x.answer === "no").map(x => x.text), pass = sw.filter(x => x.answer === "pass");
-    const answered = sw.filter(x => x.answer !== "pass");
-    const avg = answered.length ? (answered.reduce((a, x) => a + x.ms, 0) / answered.length / 1000).toFixed(1) : "-";
-    const text = `そう思う: ${yes.join("、") || "なし"}。ちがう: ${no.join("、") || "なし"}。パス: ${pass.length}枚。平均${avg}秒で回答`;
     state.transcript = state.transcript.filter(t => t.topic !== "swipe");
-    state.transcript.push({ topic: "swipe", question: "直感チェック（3秒）", answer: text }); save();
-    generate();
+    $("loadtext").textContent = "直感から傾向を読んでいます…"; show("s-load");
+    let r = null;
+    try { r = await fetch("/api/intuition", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ swipes: sw }) }).then(r=>r.json()); } catch(_) {}
+    const summary = (r && r.summary) || "";
+    const lines = (r && r.lines) || [];
+    state.transcript.push({ topic: "swipe", question: "直感チェック（3秒）", answer: summary });
+    const secs = sections(state.wiki).filter(x => x.h !== "直感で答えたこと");
+    const sec = { h: "直感で答えたこと", lines: [summary + "［直感］", ...lines.map(l => l + "［直感］")] };
+    const ai = secs.findIndex(x => x.h === "AIに知っておいてほしいこと" || x.h === "AIへのメモ");
+    if (ai >= 0) secs.splice(ai, 0, sec); else secs.push(sec);
+    state.wiki = secs.map(x => "## " + x.h + "\n" + x.lines.join("\n")).join("\n");
+    state.savedAt = new Date().toISOString();
+    state.history = state.history || []; state.history.push({ at: state.savedAt, transcript: state.transcript, wiki: state.wiki, intuition: true });
+    save(); await persist(); renderWiki(); show("s-wiki");
+    flash($("wmsg"), "「直感で答えたこと」をWikiに追加しました（第" + state.history.length + "版）");
   }
+  $("b-swipe").onclick = () => startSwipe();
+  $("b-swipe-quit").onclick = (e) => { e.preventDefault(); clearTimeout(swipeTimer); show("s-wiki"); };
   $("b-yes").onclick = () => answerCard("yes"); $("b-no").onclick = () => answerCard("no");
   $("b-slow").onclick = (e) => { e.preventDefault(); SWIPE_MS = SWIPE_MS === 3000 ? 10000 : 3000; $("b-slow").textContent = SWIPE_MS === 3000 ? "ゆっくり（10秒）にする" : "はやく（3秒）に戻す"; clearTimeout(swipeTimer); nextCard(); };
   document.addEventListener("keydown", (e) => { if ($("s-swipe").hidden) return; if (e.key === "ArrowRight") answerCard("yes"); if (e.key === "ArrowLeft") answerCard("no"); });
@@ -680,6 +694,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
       const d = document.createElement("span"); d.className = "d"; d.textContent = new Date(r.at).toLocaleString("ja-JP", { year: "numeric", month: "long", day: "numeric", hour: "2-digit", minute: "2-digit" }); li.appendChild(d);
       const t = document.createElement("span"); t.textContent = (r.diag && r.diag.type) ? "『" + (r.diag.type) + "』タイプ" : ""; li.appendChild(t);
       if (r.edit) { const e = document.createElement("span"); e.className = "cur"; e.textContent = "手直し"; li.appendChild(e); }
+      if (r.intuition) { const e = document.createElement("span"); e.className = "cur"; e.textContent = "直感チェック"; li.appendChild(e); }
       if (i === 0) { const c = document.createElement("span"); c.className = "cur"; c.textContent = "（最新）"; li.appendChild(c); }
       if (r.sample) { const sm = document.createElement("span"); sm.className = "sample"; sm.textContent = "サンプル: 半年後にもう一度答えたときの想像図"; li.appendChild(sm); }
       ul.appendChild(li);
