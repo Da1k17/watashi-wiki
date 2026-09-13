@@ -28,6 +28,7 @@ function envFromSecrets(name) {
   return null;
 }
 function backend() {
+  if (envFromSecrets("LLM_BACKEND") === "none") return "none";
   if (loadKey()) return "api";
   if (envFromSecrets("LLM_BACKEND") === "cli") return "cli";
   return "none";

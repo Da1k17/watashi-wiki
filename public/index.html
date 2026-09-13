@@ -211,6 +211,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
       <label class="lab" for="name">ニックネーム（なくてもOK）</label>
       <input type="text" id="name" placeholder="例: ダイキ" autocomplete="nickname">
     </div>
+    <div class="msg" id="smsg"></div>
     <div class="row"><button class="btn primary" id="b-start">はじめる</button></div>
     <p class="small muted" style="margin-top:14px">答えた内容はこの端末のブラウザと、共有用URLのためにサーバー内に保存されます。年齢は年代で聞き、本名や住所は聞きません。</p>
     <details style="margin-top:10px;font-size:14px"><summary style="cursor:pointer">この作品について</summary>
@@ -292,10 +293,11 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     </div>
     <div class="msg" id="wmsg"></div>
     <div class="btnbar">
+      <div class="row" id="row-mine" hidden><button class="btn primary" id="b-mine">自分のWikiを作る</button></div>
       <div class="row" hidden><button class="btn primary" id="b-ask">このWikiで質問する</button></div>
       <div class="row"><button class="btn" id="b-copy">AI用にコピー</button><button class="btn" id="b-hist2">履歴を表示</button></div>
       <div class="row"><button class="btn" id="b-swipe">直感チェックをやってみる（10枚・3秒）</button></div>
-      <p class="small muted">やりたい人だけ。直感で答えた結果と考え方の傾向が、Wikiに1項目として加わります。</p>
+      <p class="small muted" id="swipenote">やりたい人だけ。直感で答えた結果と考え方の傾向が、Wikiに1項目として加わります。</p>
       <p class="small muted">コピーしたものをChatGPTやClaudeに貼ると、あなたに合わせた返事になります。</p>
       <div class="row"><button class="btn ghost" id="b-reset">最初から</button></div>
     </div>
@@ -363,11 +365,12 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
   const KEY = "watashi-wiki-v1";
 
   const CATS = ["お金","健康","家族","仕事","趣味","スマホ・機械"];
-  const EXPECTED = 6;
+  const EXPECTED = 5;
 
   let state = load() || { name:"", transcript:[], wiki:"", savedAt:"", history:[], diag:null, verdicts:{}, uid:"" };
   let backend = "none";
   let pending = null; // いまAIが聞いている質問 {question, topic}
+  let viewing = false; // 他人のWikiを閲覧中（読み取り専用）
 
   function load(){ try { return JSON.parse(localStorage.getItem(KEY)); } catch(_) { return null; } }
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(state)); } catch(_) {} }
@@ -448,6 +451,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
       const r = await fetch("/api/interview", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ name: state.name, transcript: state.transcript }) }).then(r=>r.json());
       $("thinking").hidden = true;
       if (r.done) { pending = null; $("ack").textContent = r.ack || ""; return generate(); }
+      if (!r.question) { pending = null; flash($("qmsg"), r.error || "質問を用意できませんでした。少し待ってから「つぎへ」を押してください"); return; }
       pending = { question: r.question, topic: r.topic };
       $("s-int").dataset.topic = /^q[1-5]$/.test(r.topic) ? r.topic : "followup";
       $("ack").textContent = r.ack || "";
@@ -513,7 +517,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     save(); await persist(); renderWiki(); show("s-wiki");
     flash($("wmsg"), "「直感で答えたこと」をWikiに追加しました（第" + state.history.length + "版）");
   }
-  $("b-swipe").onclick = () => startSwipe();
+  $("b-swipe").onclick = () => { if (!viewing) startSwipe(); };
   $("b-swipe-quit").onclick = (e) => { e.preventDefault(); clearTimeout(swipeTimer); show("s-wiki"); };
   $("b-yes").onclick = () => answerCard("yes"); $("b-no").onclick = () => answerCard("no");
   $("b-slow").onclick = (e) => { e.preventDefault(); SWIPE_MS = SWIPE_MS === 3000 ? 10000 : 3000; $("b-slow").textContent = SWIPE_MS === 3000 ? "ゆっくり（10秒）にする" : "はやく（3秒）に戻す"; clearTimeout(swipeTimer); nextCard(); };
@@ -531,6 +535,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     const payload = { name: state.name, transcript: state.transcript };
     try {
       const r = await fetch("/api/generate", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify(payload) }).then(r=>r.json());
+      if (!r.wiki) throw new Error(r.error || "生成に失敗しました");
       state.wiki = r.wiki; state.savedAt = new Date().toISOString();
       state.diag = null; state.verdicts = {};
       state.history = state.history || []; state.history.push({ at: state.savedAt, transcript: state.transcript, wiki: r.wiki });
@@ -623,7 +628,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     const toc = $("toc"); toc.innerHTML = ""; secs.forEach(sc => { const li = document.createElement("li"); li.textContent = sc.h; toc.appendChild(li); });
     const el = $("wiki"); el.innerHTML = "";
     secs.forEach((sc, idx) => {
-      const h = document.createElement("h3"); h.textContent = sc.h; const ed = document.createElement("span"); ed.className = "ed"; ed.textContent = "[編集]"; ed.title = "この項目だけ書き直す"; h.appendChild(ed); el.appendChild(h);
+      const h = document.createElement("h3"); h.textContent = sc.h; const ed = document.createElement("span"); ed.className = "ed"; ed.textContent = "[編集]"; ed.title = "この項目だけ書き直す"; if (!viewing) h.appendChild(ed); el.appendChild(h);
       const body = document.createElement("div"); body.className = "secbody";
       let ul = null;
       sc.lines.forEach(line => { const n = lineNode(line); if (n.tagName === "LI") { if (!ul) { ul = document.createElement("ul"); body.appendChild(ul); } ul.appendChild(n); } else { ul = null; body.appendChild(n); } });
@@ -639,15 +644,29 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     if (hits.length) rows.push(["当たった推測", hits.join("、")]);
     rows.push(["版", String((state.history || []).length || 1)]);
     rows.forEach(([k, v, lk]) => { if (!v) return; const tr = document.createElement("tr"); const th = document.createElement("th"); th.textContent = k; const td = document.createElement("td"); td.textContent = v; if (lk) td.className = "lk"; tr.appendChild(th); tr.appendChild(td); ib.appendChild(tr); });
+    $("t-edit").hidden = viewing; $("t-edit2").hidden = viewing;
+    $("b-swipe").closest(".row").hidden = viewing; $("swipenote").hidden = viewing;
+    $("b-reset").closest(".row").hidden = viewing;
+    $("row-mine").hidden = !viewing;
     renderTags();
   }
+  $("b-mine").onclick = () => {
+    viewing = false;
+    const mine = load();
+    if (mine && mine.uid && mine.wiki) { location.href = "/wiki/" + mine.uid; return; }
+    state = mine || { name:"", transcript:[], wiki:"", savedAt:"", history:[], diag:null, verdicts:{}, uid:"" };
+    history.replaceState(null, "", "/"); $("name").value = state.name || ""; show("s-start");
+  };
 
   // ---- 興味タグ → 質問サジェスト
   let sugMode = "self", curTag = "";
   function extractTags(){
     const src = (state.transcript || []).filter(t => ["q1","q2","q3","q5"].includes(t.topic)).map(t => t.answer).join("、");
-    const stop = new Set(["です","ます","こと","もの","最近","毎日","中心","好き","気に","なって","います","した","して","たい","ので","から","そして","また","あと","特に","ない","なし","私","わたし","自分"]);
-    const parts = src.split(/[、。，,・／\/\s]+|と|や|が好き|が気になる|について|したい|しています|です|ます/).map(x => x.trim()).filter(x => x.length >= 2 && x.length <= 8 && !stop.has(x) && !/^\d/.test(x));
+    const stop = new Set(["です","ます","こと","もの","最近","毎日","中心","好き","気に","なって","います","した","して","たい","ので","から","そして","また","あと","特に","ない","なし","私","わたし","自分","これから","いま","今","今年","来年","将来","いつか","もっと","たまに","よく","ときどき","少し","たくさん","平日","週末","休日","一人","夫婦","家族と","特にない"]);
+    const parts = src
+      .split(/[、。，,・／\/\s]+|(?<=[^ぁ-ん])[とやはでをも](?=[^ぁ-ん])|が好き|が気になる|について|したい|しています|している|してる|です|ます/)
+      .map(x => x.replace(/^(と|や|で|に|を|は|が|の|も)+/, "").replace(/(と|や|で|に|を|は|が|の|も|から|まで|ほど)+$/, "").trim())
+      .filter(x => x.length >= 2 && x.length <= 8 && !stop.has(x) && !/^\d/.test(x) && !/^[ぁ-んー]+$/.test(x));
     const tags = []; parts.forEach(p => { if (!tags.includes(p)) tags.push(p); });
     return tags.slice(0, 10);
   }
@@ -657,7 +676,6 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     if (!tags.length) { $("tagshint").textContent = "答えからタグが作れませんでした。編集で好きなことを足してみてください。"; return; }
     $("tagshint").textContent = sugMode === "self" ? "タグを押すと、あなたがAIや詳しい人に聞くとよい質問を3つ考えます。" : "タグを押すと、この人に聞くと会話が深まる質問を3つ考えます。";
     tags.forEach(t => w.appendChild(chip(t, curTag === t, () => suggest(t))));
-    const isOwner = !!(state.uid && load() && load().uid === state.uid);
     $("m-self").classList.toggle("on", sugMode === "self"); $("m-other").classList.toggle("on", sugMode === "other");
   }
   async function suggest(tag){
@@ -666,6 +684,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     try {
       const r = await fetch("/api/suggest", { method:"POST", headers:{"content-type":"application/json"}, body: JSON.stringify({ wiki: state.wiki, tag, mode: sugMode }) }).then(r=>r.json());
       ol.innerHTML = "";
+      if (r.error && !(r.questions || []).length) { flash($("wmsg"), r.error); return; }
       (r.questions || []).forEach(q => {
         const li = document.createElement("li"); li.textContent = q;
         const a = document.createElement("a"); a.href = "#"; a.textContent = "コピー"; a.onclick = async (e) => { e.preventDefault(); try { await navigator.clipboard.writeText(q); flash($("wmsg"), "コピーしました。ChatGPTやClaudeに貼ってください。"); } catch(_) {} };
@@ -726,7 +745,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     } catch(_) {}
   }
   function openEdit(){ $("edittitle").textContent = (state.name || "わたし") + " を編集中"; $("edittext").value = state.wiki || ""; show("s-edit"); }
-  $("t-edit").onclick = openEdit; $("t-edit2").onclick = openEdit;
+  $("t-edit").onclick = () => { if (!viewing) openEdit(); }; $("t-edit2").onclick = () => { if (!viewing) openEdit(); };
   $("b-edit-cancel").onclick = () => show("s-wiki");
   $("t-view2").onclick = () => show("s-wiki");
   $("t-hist3").onclick = () => { renderHist(); show("s-hist"); };
@@ -754,7 +773,7 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
     try { await navigator.clipboard.writeText(text); flash($("wmsg"), "コピーしました。ChatGPTやClaudeに貼ってください。"); }
     catch(_) { flash($("wmsg"), "コピーできませんでした。長押しで選択してコピーしてください。"); }
   };
-  $("b-reset").onclick = () => { if (!confirm("答えとWikiを消して最初からにしますか？")) return; state = { name:"", transcript:[], wiki:"", savedAt:"", history: state.history || [], diag:null, verdicts:{}, uid:"" }; save(); history.replaceState(null, "", "/"); $("name").value = ""; show("s-start"); };
+  $("b-reset").onclick = () => { if (!confirm("この端末の答え・Wiki・履歴を消して最初からにしますか？（共有URLのページは残ります）")) return; state = { name:"", transcript:[], wiki:"", savedAt:"", history: [], diag:null, verdicts:{}, uid:"" }; viewing = false; save(); history.replaceState(null, "", "/"); $("name").value = ""; show("s-start"); };
   $("b-ask").onclick = () => { show("s-ask"); };
   $("b-ask-back").onclick = () => show("s-wiki");
   $("b-towiki").onclick = () => show("s-wiki");
@@ -787,10 +806,15 @@ footer{position:fixed;left:0;right:0;bottom:0;padding:8px 14px;font-size:12px;co
           const mine = load(); const isMine = !!(mine && mine.uid === rec.uid);
           state = { ...state, uid: rec.uid, name: rec.name || "", wiki: rec.wiki, transcript: rec.transcript || [], history: rec.history || [], savedAt: rec.savedAt || "", diag: null, verdicts: {} };
           sugMode = isMine ? "self" : "other";
-          save(); renderWiki(); show("s-wiki"); return;
+          viewing = !isMine;
+          if (isMine) save();
+          renderWiki(); show("s-wiki"); return;
         }
       } catch(_) {}
-      flash($("wmsg"), "そのWikiは見つかりませんでした。");
+      history.replaceState(null, "", "/");
+      state = load() || state;
+      if (state.wiki) { renderWiki(); show("s-wiki"); flash($("wmsg"), "そのURLのWikiは見つかりませんでした。あなたのWikiを表示しています。"); return; }
+      $("name").value = state.name || ""; show("s-start"); flash($("smsg"), "そのURLのWikiは見つかりませんでした。"); return;
     }
     if (state.wiki) { renderWiki(); show("s-wiki"); } else { $("name").value = state.name || ""; show("s-start"); }
   })();

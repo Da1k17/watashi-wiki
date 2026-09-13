@@ -1,20 +1,21 @@
 // 6問の答え → 診断（タイプ名・一行・推測3つ）＋「わたしのWiki」(Markdown)
 const { complete, extractJson } = require("./_llm");
 
-const SYSTEM = `あなたは、占い師のように当てにいく編集者です。インタビューの回答をもとに、次のJSONだけを出力します。
-{"type":"タイプ名","line":"一行の読み","guesses":["推測1","推測2","推測3"],"wiki":"Markdown"}
-- type: 8字以内。回答から作る前向きでユニークな二語（例: 旅する段取り屋、味にこだわる世話焼き）。性格診断の型名を流用しない。
-- line: 30字以内。回答の要素を2つ以上入れた、その人だけの一行。
-- guesses: 回答から少し踏み込んだ推測を3つ。「〜なほう」の形、各15字以内、本人が当たり／ちがうで答えられる文。回答をそのまま言い換えたものは不可。
-- wiki: 以下の見出し構成のMarkdown。回答にないことは書かない（推測はguessesにだけ入れる）。回答にない項目は「（未回答）」。各行の末尾に根拠の設問番号を［Q1］のように付ける。平易な言葉、各見出し1〜2文。
+const SYSTEM = `あなたは編集者です。インタビューの回答だけを材料に、本人の「わたしのWiki」をMarkdownで書きます。
+ルール:
+- 回答にないことは推測して書かない。回答にない項目は「（未回答）」と書く。
+- 性格のラベル付けをしない。「連絡は文字で」のように具体的に書く。
+- 各行の末尾に根拠の設問番号を［Q1］のように付ける。
+- 平易な言葉。専門用語なし。各見出し1〜2文。
+- 出力はMarkdownのみ。前置き・説明・コードフェンスは書かない。
+見出しは必ずこの6つ、この順:
 ## ひとことで
 ## 毎日のこと
 ## 好きなこと
 ## 気になっていること
 ## 大事にしていること
 ## AIに知っておいてほしいこと
-「AIに知っておいてほしいこと」は、本人の好み・前提・避けてほしいことを3行の箇条書きで、命令形ではなく「〜が好み」「〜という前提」のように書く。
-JSON以外の文字は出力しない。`;
+「AIに知っておいてほしいこと」は、本人の好み・前提・避けてほしいことを3行の箇条書きで、命令形ではなく「〜が好み」「〜という前提」のように書く。`;
 
 const TYPE_A = { "旅行":"旅する", "料理":"味にこだわる", "読書":"本の虫の", "テレビ・動画":"物語好きの", "音楽":"リズムで生きる", "スポーツ":"体で考える", "手芸・DIY":"手を動かす", "人と話す":"話好きの", "その他":"マイペースな" };
 const TYPE_B = { "仕事":"段取り屋", "家事":"暮らしの職人", "畑・庭":"育て屋", "散歩・運動":"歩く人", "家族の世話":"世話焼き", "趣味":"探究者", "その他":"自由人" };
@@ -69,7 +70,6 @@ function templateWiki(name, answers) {
   L.push("## 気になっていること", j("q3") ? `最近は${j("q3")}が気になっています。［Q3］` : "（未回答）［Q3］");
   L.push("## 大事にしていること", t("q5") ? `${t("q5")}［Q5］` : "（未回答）［Q5］");
   if (t("q6")) L.push(`${t("q6")}［Q6］`);
-  L.push("## 直感で答えたこと", t("swipe") ? `${t("swipe")}［直感］` : "（未実施）［直感］");
   L.push("## AIに知っておいてほしいこと", "- 専門用語なしの短い説明が好み。［共通］",
     j("q4") ? `- 前提: ${j("q4")}。［Q4］` : "- 前提: 年代・暮らしは未回答。［Q4］",
     j("q3") ? `- いちばん関心があるのは${j("q3")}。［Q3］` : "- 気になっていることは未回答。［Q3］");
@@ -108,18 +108,13 @@ module.exports = async (req, res) => {
   const user = `名前: ${name || "（未入力）"}\n回答:\n` + answers
     .map((x) => `${x.id.toUpperCase()} ${x.question}\n→ ${(x.values || []).join("、")}${x.text ? " " + x.text : ""}`)
     .join("\n");
-  const tpl = { wiki: templateWiki(name, answers), diag: templateDiag(answers), backend: "template" };
+  const tpl = { wiki: templateWiki(name, answers), backend: "template" };
   try {
     const r = await complete(SYSTEM, user, 2500);
     if (!r.text) return res.status(200).json(tpl);
-    try {
-      const j = extractJson(r.text);
-      if (!j.wiki || !j.type) throw new Error("incomplete json");
-      return res.status(200).json({ wiki: j.wiki, diag: { type: j.type, line: j.line || "", guesses: (j.guesses || []).slice(0, 3) }, backend: r.backend });
-    } catch (_) {
-      // JSONでなかった場合: 本文をWikiとして使い、診断は定型で補う
-      return res.status(200).json({ wiki: r.text.replace(/^```[a-z]*\n?|```$/g, ""), diag: tpl.diag, backend: r.backend });
-    }
+    const md = r.text.replace(/^```[a-z]*\n?/m, "").replace(/```\s*$/m, "").trim();
+    if (!md.includes("## ひとことで")) return res.status(200).json({ ...tpl, backend: r.backend + "-fallback" });
+    return res.status(200).json({ wiki: md, backend: r.backend });
   } catch (e) {
     console.error("generate failed:", e.message);
     return res.status(200).json({ ...tpl, error: e.message });
