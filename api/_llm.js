@@ -92,4 +92,4 @@ function extractJson(text) {
   return JSON.parse(text.slice(s, e + 1));
 }
 
-module.exports = { complete, backend, extractJson, MODEL };
+module.exports = { complete, backend, extractJson, MODEL, envFromSecrets };

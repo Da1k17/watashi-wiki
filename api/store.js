@@ -1,26 +1,27 @@
 // Wikiの保存と取得。POST {uid?, name, wiki, transcript, history} → {uid} / GET ?uid=xxx → 保存内容
-// ローカルMVP用にJSONファイルへ保存（Vercel等では永続化されないので、公開時はDBに置き換える）
-const fs = require("fs");
-const path = require("path");
-// Vercel等の読み取り専用環境では /tmp に保存（インスタンス内のみ・一時的）
-const FILE = process.env.VERCEL ? "/tmp/wikis.json" : path.join(__dirname, "..", "data", "wikis.json");
+// 保存先は api/_db.js が決める（Supabase があればそちら、無ければローカルのJSONファイル）
+const { db } = require("./_db");
 
-function readAll() { try { return JSON.parse(fs.readFileSync(FILE, "utf8")); } catch (_) { return {}; } }
-function writeAll(all) { fs.mkdirSync(path.dirname(FILE), { recursive: true }); fs.writeFileSync(FILE, JSON.stringify(all, null, 1)); }
-function newUid(all) { const c = "abcdefghjkmnpqrstuvwxyz23456789"; let u; do { u = Array.from({ length: 6 }, () => c[Math.floor(Math.random() * c.length)]).join(""); } while (all[u]); return u; }
+async function newUid(store) {
+  const c = "abcdefghjkmnpqrstuvwxyz23456789";
+  for (let i = 0; i < 20; i++) {
+    const u = Array.from({ length: 6 }, () => c[Math.floor(Math.random() * c.length)]).join("");
+    if (!(await store.exists(u))) return u;
+  }
+  throw new Error("uid generation failed");
+}
 
 module.exports = async (req, res) => {
-  const all = readAll();
+  const store = db();
   if (req.method === "GET") {
     const uid = new URL(req.url, "http://x").searchParams.get("uid") || "";
-    const rec = all[uid];
+    const rec = await store.get(uid);
     if (!rec) return res.status(404).json({ error: "not found" });
-    return res.status(200).json({ uid, ...rec });
+    return res.status(200).json({ uid, ...rec, storage: store.kind });
   }
   const b = req.body || {};
   if (!b.wiki) return res.status(400).json({ error: "wiki required" });
-  const uid = (b.uid && /^[a-z0-9]{4,12}$/.test(b.uid)) ? b.uid : newUid(all);
-  all[uid] = { name: b.name || "", wiki: b.wiki, transcript: b.transcript || [], history: b.history || [], savedAt: new Date().toISOString() };
-  writeAll(all);
-  return res.status(200).json({ uid });
+  const uid = (b.uid && /^[a-z0-9]{4,12}$/.test(b.uid)) ? b.uid : await newUid(store);
+  await store.put(uid, { name: b.name || "", wiki: b.wiki, transcript: b.transcript || [], history: b.history || [], savedAt: new Date().toISOString() });
+  return res.status(200).json({ uid, storage: store.kind });
 };
